@@ -3,6 +3,25 @@
 #include <string.h>
 #include <deque>
 
+
+//for picking out process names  
+std::string processName = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+
+float getTime(float lambda, float max){
+	float x, r;
+	r = drand48();
+	x = -log(r) / lambda;
+	while( x > max ){
+		r = drand48();
+		x = -math.log(r) / lambda;
+	}
+	return x;
+}
+
+
+
+
 int main( int argc, char ** argv) {
     /* Determine what scheduling algorithm is used:
        FCFS
@@ -63,7 +82,8 @@ int main( int argc, char ** argv) {
     std::deque<int> READY;
     std::deque<int> RUNNING;
     std::deque<int> BLOCKED;
-
+	
+	
 
     /* Run simulations
      */
