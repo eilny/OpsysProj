@@ -10,8 +10,11 @@
 //for picking out process names  
 std::string processName = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
-//Get arrival time
-float getTime(float lambda, float max) {
+//For picking print statements
+enum PrintState {ARRIVE, START, COMPLETED, BLOCK, IOCOMPLETED, TAU, TERMINATED};
+
+//Get arrival time (and other times I think) remember to floor the returned value for the correct values 
+float getTime(float lambda, float max){
 	float x, r;
 	r = drand48();
 	x = -log(r) / lambda;
@@ -28,6 +31,41 @@ int getNumBurst() {
 	return (int) std::ceil((r * 100));
 }
 
+// Printing statements 
+// Needs to be modified for process class
+// void printProcessState(PrintState p, int time, process cur, float tau){
+	
+	// if( p == ARRIVE ){
+		// if(0 != tau){
+			// printf("time %dms: Process %c (tau %.0fms) arrived; added to ready queue ", time, cur.getId(), tau);
+		// }else{
+			// printf("time %dms: Process %c arrived; added to ready queue ", time, cur.getId());
+		// }
+	// }
+	// if(p == START){
+		// printf("time %dms: Process %c started using the CPU for %dms burst ", time, cur.getId(), cpu);
+	// }
+	// if(p == COMPLETED){
+		// printf("time %dms: Process %c completed a CPU burst; %d bursts to go ", time, cur.getId(), cur.getRemainBurst());
+	// }
+	// if(p == BLOCK){
+		// printf("time %dms: Process %c switching out of CPU; will block on I/O until time %dms", time, cur.getId(), time+io);
+	// }
+	// if(p == IOCOMPLETED){
+		// if(0 != tau){
+			// printf("time %dms: Process %c (tau %.0fms) completed I/O; added to ready queue ", time, cur.getId(), tau);
+		// }else{
+			// printf("time %dms: Process %c completed I/O; added to ready queue ", time, cur.getId());
+		// }
+	// }
+	// if(p == TAU){
+		// printf("time %dms: Recalculated tau = %.0fms for process %c ", time, tau, cur.getId());
+	// }
+	// if(p == TERMINATED){
+		// printf("time %dms: Process %c terminated ", time, cur.getId());
+	// }
+	// fflush(stdout);
+// }
 
 
 int main( int argc, char ** argv) {
