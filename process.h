@@ -1,4 +1,5 @@
 #include <stdint.h>
+#include <queue>
 
 #ifndef _H_PROCESS_H_
 #define _H_PROCESS_H_
@@ -12,13 +13,13 @@ class Process {
         unsigned int turnaround_time;
         unsigned int wait_time;
 
-        std::queue<unsigned int> burst_times;
-        std::queue<unsigned int> io_times;
+        std::queue<unsigned int> * burst_times;
+        std::queue<unsigned int> * io_times;
 
         enum State {
             READY,
             RUNNING,
-            BLOCKED }
+            BLOCKED };
 		
 	public:
 	//Get & Set functions for accessing the variables 	

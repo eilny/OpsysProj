@@ -1,32 +1,32 @@
 #include "process.h"
 
 
-void Process::Process(unsigned int pid, unsigned int arr
+Process::Process(unsigned int pid, unsigned int arr
         , unsigned int processed)
     : process_ID(pid)
     , arrival_time(arr)
     , processed_time(processed)
 {
     // initialize turnaround, wait, and burst/io queues
-    turnaround_time = 0;
-    wait_time = 0;
-    burst_times = new std::queue<unsigned int>;
-    io_times = new std::queue<unsigned int>;
+    this->turnaround_time = 0;
+    this->wait_time = 0;
+    this->burst_times = new std::queue<unsigned int>;
+    this->io_times = new std::queue<unsigned int>;
 }
 
-void Process::~Process() {
+Process::~Process() {
     // delete burst/io time queues
-    delete burst_times;
-    delete io_times;
+    delete this->burst_times;
+    delete this->io_times;
 }
 
 void Process::contextSwitch(bool switch_in, unsigned int tcshalf) {
     if (switch_in) {
-        wait_time += tcshalf;
-        State = RUNNING;
+        this->wait_time += tcshalf;
+        this->State = RUNNING;
     }
     else {
-        State = BLOCKED;
+        this->State = BLOCKED;
     }
 }
 
