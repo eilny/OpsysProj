@@ -22,8 +22,8 @@ class Process {
 		
 	public:
 	//Get & Set functions for accessing the variables 	
-        Process();
+        Process(unsigned int pid, unsigned int arr, unsigned int processed);
         ~Process();
-        void contextSwitch(unsigned int tcshalf);
+        void contextSwitch(bool switch_in, unsigned int tcshalf);
 };
 #endif
