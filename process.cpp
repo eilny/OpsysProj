@@ -1,7 +1,9 @@
+#include <queue>
 #include "process.h"
 
 
-Process::Process(unsigned int pid, unsigned int arr
+
+Process::Process( char pid, unsigned int arr
         , unsigned int processed)
     : process_ID(pid)
     , arrival_time(arr)

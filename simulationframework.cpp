@@ -4,6 +4,8 @@
 #include <deque>
 #include <math.h>
 #include <string>
+#include <vector>
+#include <queue>
 #include "process.h"
 
 
@@ -31,9 +33,47 @@ int getNumBurst() {
 	return (int) std::ceil((r * 100));
 }
 
+void getProcessList(int seed, float lambda, int maxTime, std::vector<Process> processes, int numProcess){
+	srand48(seed);
+	for(int i = 0; i < numProcess; i++){
+		int arr = floor(getTime(lambda, maxTime));
+		int bursts = getNumBurst();
+		Process *temp = new Process(processName[i], arr, bursts);
+		// temp->getBurstTimes(lambda, maxTime);
+		// fprintf(stdout, "Process %c [NEW] (arrival time %d ms) %d CPU bursts\n", temp->getId(), temp->getArrival(), temp->getBurstNum()); 
+		// if(i != 0){
+			// vector<Process>::iterator bg = processes.begin();
+			// vector<Process>::iterator ed = processes.end();
+			// while(bg != ed){
+				// Process comp = *bg;
+				// if(temp->getArrival() < comp.getArrival()){
+					// processes.insert(bg, *temp);
+					// break;
+				// } 
+				// else if(temp->getArrival() == comp.getArrival()){
+					// if(temp->getId() < comp.getId()){
+						// processes.insert(bg, *temp);
+						// break;
+					// }
+				// }
+				// bg++;
+				// if(bg == ed){
+					// processes.push_back(*temp);
+				// }
+			// }
+		// }
+		// else{
+			// processes.push_back(*temp);
+		// }
+	}
+	
+	
+} 
+
+
 // Printing statements 
 // Needs to be modified for process class
-// void printProcessState(PrintState p, int time, process cur, float tau){
+// void printProcessState(PrintState p, int time, Process cur, float tau){
 	
 	// if( p == ARRIVE ){
 		// if(0 != tau){
@@ -43,13 +83,13 @@ int getNumBurst() {
 		// }
 	// }
 	// if(p == START){
-		// printf("time %dms: Process %c started using the CPU for %dms burst ", time, cur.getId(), cpu);
+		// printf("time %dms: Process %c started using the CPU for %dms burst ", time, cur.getId(), cur.getBurst());
 	// }
 	// if(p == COMPLETED){
 		// printf("time %dms: Process %c completed a CPU burst; %d bursts to go ", time, cur.getId(), cur.getRemainBurst());
 	// }
 	// if(p == BLOCK){
-		// printf("time %dms: Process %c switching out of CPU; will block on I/O until time %dms", time, cur.getId(), time+io);
+		// printf("time %dms: Process %c switching out of CPU; will block on I/O until time %dms", time, cur.getId(), time+cur.getIo());
 	// }
 	// if(p == IOCOMPLETED){
 		// if(0 != tau){
@@ -122,11 +162,11 @@ int main( int argc, char ** argv) {
 
 
     // set up queues
-    std::deque<int> READY;
-    std::deque<int> RUNNING;
-    std::deque<int> BLOCKED;
+    std::vector<Process> READY;
+    std::vector<Process> RUNNING;
+    std::vector<Process> BLOCKED;
 	
-	
+	std::vector<Process> baseProcesses;
 
     /* Run simulations
 	*/
