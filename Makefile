@@ -1,2 +1,2 @@
 all:
-	gcc -Wall -Werror -g simulationframework.cpp 
+	g++ -Wall -Werror -g -std=c++11 *.cpp 

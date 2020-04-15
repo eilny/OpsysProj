@@ -2,23 +2,31 @@
 #include <stdlib.h>
 #include <string.h>
 #include <deque>
+#include <math.h>
+#include <string>
+#include "process.h"
 
 
 //for picking out process names  
 std::string processName = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
-
+//Get arrival time
 float getTime(float lambda, float max){
 	float x, r;
 	r = drand48();
 	x = -log(r) / lambda;
 	while( x > max ){
 		r = drand48();
-		x = -math.log(r) / lambda;
+		x = -(log(r)) / lambda;
 	}
 	return x;
 }
 
+//get Burst Time 
+int getNumBurst(){
+	float r = drand48();
+	return (int) std::ceil((r * 100));
+}
 
 
 
@@ -28,7 +36,7 @@ int main( int argc, char ** argv) {
        SJF
        SRT
        RR
-     */
+    */
 
     if (argc < 9) {
         fprintf(stderr, "USAGE: ./a.out <seed> <lambda> <upper bound> < number of processes> \
@@ -86,6 +94,7 @@ int main( int argc, char ** argv) {
 	
 
     /* Run simulations
-     */
+	*/
 
 }
+

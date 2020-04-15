@@ -12,5 +12,5 @@ class process {
 
         unsigned int turnaround_time;
         unsigned int wait_time;
-
+};
 #endif
