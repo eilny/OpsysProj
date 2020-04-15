@@ -11,7 +11,7 @@
 std::string processName = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
 //Get arrival time
-float getTime(float lambda, float max){
+float getTime(float lambda, float max) {
 	float x, r;
 	r = drand48();
 	x = -log(r) / lambda;
@@ -23,7 +23,7 @@ float getTime(float lambda, float max){
 }
 
 //get Burst Time 
-int getNumBurst(){
+int getNumBurst() {
 	float r = drand48();
 	return (int) std::ceil((r * 100));
 }
@@ -31,12 +31,6 @@ int getNumBurst(){
 
 
 int main( int argc, char ** argv) {
-    /* Determine what scheduling algorithm is used:
-       FCFS
-       SJF
-       SRT
-       RR
-    */
 
     if (argc < 9) {
         fprintf(stderr, "USAGE: ./a.out <seed> <lambda> <upper bound> < number of processes> \
@@ -73,6 +67,7 @@ int main( int argc, char ** argv) {
         return EXIT_FAILURE;
     }
 
+#ifdef DEBUG_MODE
     fprintf(stdout, "args:  seed: %d lambda: %d upper bound: %u nproc: %u tcs: %u alpha: %u rrtimeslice: %u rr begin: %u %s\n"
             , seed
             , lambda
@@ -83,6 +78,7 @@ int main( int argc, char ** argv) {
             , timeslice
             , rraddbgn
             , (rraddbgn ? "BEGINNING" : "END") );
+#endif
 
 
 
