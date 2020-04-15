@@ -23,10 +23,10 @@ Process::~Process() {
 void Process::contextSwitch(bool switch_in, unsigned int tcshalf) {
     if (switch_in) {
         this->wait_time += tcshalf;
-        this->State = RUNNING;
+        this->state = RUNNING;
     }
     else {
-        this->State = BLOCKED;
+        this->state = BLOCKED;
     }
 }
 
