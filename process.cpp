@@ -1,8 +1,9 @@
 #include "process.h"
 
 
-void Process::Process() :
-    process_ID(pid)
+void Process::Process(unsigned int pid, unsigned int arr
+        , unsigned int processed)
+    : process_ID(pid)
     , arrival_time(arr)
     , processed_time(processed)
 {
