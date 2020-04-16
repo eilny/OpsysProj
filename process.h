@@ -43,6 +43,8 @@ class Process {
         State setState(State newstate);
         unsigned int burstTimeLeft();
         unsigned int ioTimeLeft();
+        void doWork(unsigned int deltaT);
+        void doIO(unsigned int deltaT);
 		
 };
 #endif

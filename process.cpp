@@ -70,3 +70,10 @@ unsigned int Process::ioTimeLeft() {
     return this->remaining_io;
 }
 
+void Process::doWork(unsigned int deltaT) {
+    this->remaining_burst -= deltaT;
+}
+
+void Process::doIO(unsigned int deltaT) {
+    this->remaining_io -= deltaT;
+}
