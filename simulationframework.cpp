@@ -7,6 +7,7 @@
 #include <vector>
 #include <queue>
 #include "process.h"
+#include "scheduler.h"
 
 
 //for picking out process names  
@@ -189,8 +190,12 @@ int main( int argc, char ** argv) {
 	//Testing function 
 	// printArrivalList(baseProcesses, nproc);
 	printSimQ(baseProcesses);
-	printf("Vector ending size is %lu", baseProcesses->size());
-	printf(" First process is %c\n", (*baseProcesses)[0].getId());
+
+	//Test scheduler class construtor 
+	// Scheduler *sch = new Scheduler(*baseProcesses, tcs, timeslice, rraddbgn);
+	// sch->advance();
+	// printf("Scheduler: %lu\n", sch->getTimer());
+	
 #endif
     /* Run simulations
 	*/

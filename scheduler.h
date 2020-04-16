@@ -24,12 +24,20 @@ class Scheduler {
 
         bool hasTimeSlice;
         unsigned int timeslice;
+		unsigned int rraddbgn;
 
     public:
+		//Constructor
+		Scheduler(std::vector<Process> processList,
+			unsigned int tcontext,
+			unsigned int tmslice, 
+			unsigned int rr);
+	
         void contextSwitch(Process toIO, Process toCPU);
         void processArrival(Process newProcess);
         unsigned int timeToNextEvent();
         void advance();
+		unsigned long getTimer();
 };
 
 #endif

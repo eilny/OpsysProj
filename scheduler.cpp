@@ -1,4 +1,54 @@
+#include <vector>
 #include "scheduler.h"
+
+//Constructor
+Scheduler::Scheduler(std::vector<Process> processList,
+			unsigned int tcontext,
+			unsigned int tmslice, 
+			unsigned int rr)
+		:	tcs(tcontext)
+		,	timeslice(tmslice)
+		,	rraddbgn(rr)
+{
+	avgwait = 0;
+	simulation_timer = 0;
+	hasTimeSlice = false;
+	
+	//Sort the incoming list 
+	for(unsigned int i = 0; i < processList.size(); ++i){
+		Process temp = processList[i];
+		if(i != 0){
+			std::vector<Process>::iterator bg = Incoming.begin();
+			std::vector<Process>::iterator ed = Incoming.end();
+			while(bg != ed){
+				Process comp = *bg;
+				if(temp.getArrival() < comp.getArrival()){
+					Incoming.insert(bg, temp);
+					break;
+				} 
+				else if(temp.getArrival() == comp.getArrival()){
+					if(temp.getId() < comp.getId()){
+						Incoming.insert(bg, temp);
+						break;
+					}
+				}
+				bg++;
+				if(bg == ed){
+					Incoming.push_back(temp);
+				}
+			}
+		}
+		else{
+			Incoming.push_back(temp);
+		}
+		
+	}
+
+}
+
+
+
+
 
 void Scheduler::contextSwitch(Process toIO, Process toCPU) {
     // do a context switch
@@ -78,3 +128,9 @@ void Scheduler::advance() {
     }
     */
 }
+		
+unsigned long Scheduler::getTimer(){
+	return this->simulation_timer;
+	
+}
+
