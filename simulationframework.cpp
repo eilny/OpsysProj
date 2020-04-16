@@ -132,7 +132,6 @@ int main( int argc, char ** argv) {
 
     // argv[1] - seed
     int seed = atoi(argv[1]);
-    srand48(seed);
     // argv[2] - lamda (interval times)
     float lambda = atof(argv[2]);
     // argv[3] - upper bound

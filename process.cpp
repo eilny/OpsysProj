@@ -12,7 +12,8 @@ Process::Process( char pid, unsigned int arr
     , num_bursts(nbursts)
 {
     // initialize turnaround, wait, and burst/io queues
-	this->remaining_time = 0;
+	this->remaining_burst = 0;
+	this->remaining_io = 0;
     this->turnaround_time = 0;
     this->wait_time = 0;
     this->burst_times = new std::queue<unsigned int>;
@@ -32,10 +33,10 @@ Process::~Process() {
 void Process::contextSwitch(bool switch_in, unsigned int tcshalf) {
     if (switch_in) {
         this->wait_time += tcshalf;
-        this->state = RUNNING;
+        this->state = RUN;
     }
     else {
-        this->state = BLOCKED;
+        this->state = BLK;
     }
 }
 
@@ -56,5 +57,16 @@ unsigned int Process::getNumBursts(){
 	return this->num_bursts;
 }
 
+State Process::setState(State newstate) {
+    this->state = newstate;
+    return this->state;
+}
 
+unsigned int Process::burstTimeLeft() {
+    return this->remaining_burst;
+}
+
+unsigned int Process::ioTimeLeft() {
+    return this->remaining_io;
+}
 

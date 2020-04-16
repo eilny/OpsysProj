@@ -4,12 +4,22 @@
 #ifndef _H_PROCESS_H_
 #define _H_PROCESS_H_
 
+enum State {
+    RDY,
+    RUN,
+    BLK
+};
+
 class Process {
     private:
         char process_ID; 
         unsigned int arrival_time; 
         unsigned int num_bursts;
-        unsigned int remaining_time; //Remaining time for popped burst time (processed time doesn't help much)
+
+        unsigned int remaining_burst;
+        //Remaining time for popped burst time (processed time doesn't help much)
+        unsigned int remaining_io;
+        //Remaining time for popped io time (processed time doesn't help much)
 
         unsigned int turnaround_time;
         unsigned int wait_time;
@@ -17,10 +27,6 @@ class Process {
         std::queue<unsigned int> * burst_times;
         std::queue<unsigned int> * io_times;
 
-        enum State {
-            READY,
-            RUNNING,
-            BLOCKED };
 			
 		State state;
 		
@@ -34,6 +40,9 @@ class Process {
 		char getId();
 		unsigned int getArrival();
 		unsigned int getNumBursts();
+        State setState(State newstate);
+        unsigned int burstTimeLeft();
+        unsigned int ioTimeLeft();
 		
 };
 #endif
