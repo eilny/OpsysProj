@@ -22,7 +22,7 @@ float getTime(float lambda, float max){
 	x = -log(r) / lambda;
 	while( x > max ){
 		r = drand48();
-		x = -(log(r)) / lambda;
+		x = -log(r) / lambda;
 	}
 	return x;
 }
@@ -34,7 +34,7 @@ int getNumBurst() {
 }
 
 //Setups up process list 
-void getProcessList(int seed, float lambda, int maxTime, std::vector<Process> processes, int numProcess){
+void getProcessList(int seed, float lambda, int maxTime, std::vector<Process> *processes, int numProcess){
 	srand48(seed); //Seeds the rng 
 	//Fills in each process for total process 
 	for(int i = 0; i < numProcess; i++){
@@ -48,6 +48,7 @@ void getProcessList(int seed, float lambda, int maxTime, std::vector<Process> pr
 			}
 			temp->addIo(ceil(getTime(lambda, maxTime)));
 		}
+		processes->push_back(*temp);
 	}
 	
 } 
@@ -85,45 +86,47 @@ void printSimQ(std::vector<Process> queue){
 // Printing statements 
 // Needs to be modified for process class
 void printProcessState(PrintState p, int time, Process cur, float tau){
-	
-	// if( p == ARRIVE ){
-		// if(0 != tau){
-			// printf("time %dms: Process %c (tau %.0fms) arrived; added to ready queue ", time, cur.getId(), tau);
-		// }else{
-			// printf("time %dms: Process %c arrived; added to ready queue ", time, cur.getId());
-		// }
-	// }
-	// if(p == START){
+	if( p == ARRIVE ){
+		if(0 != tau){
+			printf("time %dms: Process %c (tau %.0fms) arrived; added to ready queue ", time, cur.getId(), tau);
+		}else{
+			printf("time %dms: Process %c arrived; added to ready queue ", time, cur.getId());
+		}
+	}
+	if(p == START){
 		// printf("time %dms: Process %c started using the CPU for %dms burst ", time, cur.getId(), cur.getBurst());
-	// }
-	// if(p == COMPLETED){
+	}
+	if(p == COMPLETED){
 		// printf("time %dms: Process %c completed a CPU burst; %d bursts to go ", time, cur.getId(), cur.getRemainBurst());
-	// }
-	// if(p == BLOCK){
+	}
+	if(p == BLOCK){
 		// printf("time %dms: Process %c switching out of CPU; will block on I/O until time %dms", time, cur.getId(), time+cur.getIo());
-	// }
-	// if(p == IOCOMPLETED){
-		// if(0 != tau){
-			// printf("time %dms: Process %c (tau %.0fms) completed I/O; added to ready queue ", time, cur.getId(), tau);
-		// }else{
-			// printf("time %dms: Process %c completed I/O; added to ready queue ", time, cur.getId());
-		// }
-	// }
-	// if(p == TAU){
-		// printf("time %dms: Recalculated tau = %.0fms for process %c ", time, tau, cur.getId());
-	// }
-	// if(p == TERMINATED){
-		// printf("time %dms: Process %c terminated ", time, cur.getId());
-	// }
-	// fflush(stdout);
+	}
+	if(p == IOCOMPLETED){
+		if(0 != tau){
+			printf("time %dms: Process %c (tau %.0fms) completed I/O; added to ready queue ", time, cur.getId(), tau);
+		}else{
+			printf("time %dms: Process %c completed I/O; added to ready queue ", time, cur.getId());
+		}
+	}
+	if(p == TAU){
+		printf("time %dms: Recalculated tau = %.0fms for process %c ", time, tau, cur.getId());
+	}
+	if(p == TERMINATED){
+		printf("time %dms: Process %c terminated ", time, cur.getId());
+	}
+	fflush(stdout);
 }
+
+
+// Sort Processes by arriving time 
 
 
 int main( int argc, char ** argv) {
 
-    if (argc < 9) {
+    if (argc < 8 || argc > 9) {
         fprintf(stderr, "USAGE: ./a.out <seed> <lambda> <upper bound> < number of processes> \
-                <context switch time (even)> <alpha > <RR time slice> <RR [BEGINNING|END]>\n");
+                <context switch time (even)> <alpha > <RR time slice> [<RR [BEGINNING|END]>]\n");
         return EXIT_FAILURE;
     }
 
@@ -134,7 +137,7 @@ int main( int argc, char ** argv) {
     int seed = atoi(argv[1]);
     srand48(seed);
     // argv[2] - lamda (interval times)
-    int lambda = atoi(argv[2]);
+    float lambda = atof(argv[2]);
     // argv[3] - upper bound
     unsigned int upperbound = atoi(argv[3]);
     // argv[4] - number of processes to simulate
@@ -142,23 +145,25 @@ int main( int argc, char ** argv) {
     // argv[5] - context switch time (ms) - expects even value
     unsigned int tcs = atoi(argv[5]);
     // argv[6] - alpha (cpu burst time estimate)
-    unsigned int alpha = atoi(argv[6]);
+    float alpha = atof(argv[6]);
     // argv[7] - RR timeslice
     unsigned int timeslice = atoi(argv[7]);
     // argv[8] - rradd: place processes at beginning or end of queue
-    unsigned int rraddbgn;
-    if (0 == strcmp("BEGINNING", argv[8])) {
-        rraddbgn = 1;
-    } else if (0 == strcmp("END", argv[8])) {
-        rraddbgn = 0;
-    } else {
-        fprintf(stderr, "USAGE: ./a.out <seed> <lambda> <upper bound> < number of processes> \
-                <context switch time (even)> <alpha > <RR time slice> <RR [BEGINNING|END]>\n");
-        return EXIT_FAILURE;
-    }
+	unsigned int rraddbgn = 0;
+	if(argc == 9){
+		if (0 == strcmp("BEGINNING", argv[8])) {
+			rraddbgn = 1;
+		} else if (0 == strcmp("END", argv[8])) {
+			rraddbgn = 0;
+		} else {
+			fprintf(stderr, "USAGE: ./a.out <seed> <lambda> <upper bound> < number of processes> \
+					<context switch time (even)> <alpha > <RR time slice> <RR [BEGINNING|END]>\n");
+			return EXIT_FAILURE;
+		}
+	}
 
 #ifdef DEBUG_MODE
-    fprintf(stdout, "args:  seed: %d lambda: %d upper bound: %u nproc: %u tcs: %u alpha: %u rrtimeslice: %u rr begin: %u %s\n"
+    fprintf(stdout, "args:  seed: %d lambda: %f upper bound: %u nproc: %u tcs: %u alpha: %f rrtimeslice: %u rr begin: %u %s\n"
             , seed
             , lambda
             , upperbound
@@ -180,8 +185,12 @@ int main( int argc, char ** argv) {
 	std::vector<Process> baseProcesses;
 
 	//Get Processes List 
-	getProcessList(seed, lambda, upperbound, baseProcesses, nproc);
+	getProcessList(seed, lambda, upperbound, &baseProcesses, nproc);
 	
+#ifdef DEBUG_MODE 
+	//Testing function 
+	printArrivalList(baseProcesses);
+#endif
     /* Run simulations
 	*/
 

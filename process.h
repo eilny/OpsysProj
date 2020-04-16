@@ -35,6 +35,5 @@ class Process {
 		unsigned int getArrival();
 		unsigned int getNumBursts();
 		
-		
 };
 #endif
