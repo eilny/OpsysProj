@@ -54,24 +54,21 @@ void getProcessList(int seed, float lambda, int maxTime, std::vector<Process> *p
 } 
 
 //Prints Starting Arrival list 
-void printArrivalList(std::vector<Process> processes){
-	std::vector<Process>::iterator iter = processes.begin();
-	while(iter != processes.end()){
-		Process temp = *iter;
-		fprintf(stdout, "Process %c [NEW] (arrival time %d ms) %d CPU bursts\n", temp.getId(), temp.getArrival(), temp.getNumBursts()); 
-		++iter;
+void printArrivalList(std::vector<Process> processes, int numProcess){
+	for(int i = 0; i < numProcess; ++i){
+		fprintf(stdout, "Process %c [NEW] (arrival time %d ms) %d CPU bursts\n", processes[i].getId(), processes[i].getArrival(), processes[i].getNumBursts()); 
 	}
 }
 
 //Print Simulation Queue
-void printSimQ(std::vector<Process> queue){
+void printSimQ(std::vector<Process> *queue){
 	printf("[Q");
-	if(queue.empty()){
+	if(queue->empty()){
 		printf(" <empty>]\n");
 		return;
 	}
-	std::vector<Process>::iterator bg = queue.begin();
-	std::vector<Process>::iterator ed = queue.end();
+	std::vector<Process>::iterator bg = queue->begin();
+	std::vector<Process>::iterator ed = queue->end();
 	
 	while(bg != ed){
 		Process p = *bg;
@@ -182,14 +179,19 @@ int main( int argc, char ** argv) {
     std::vector<Process> RUNNING;
     std::vector<Process> BLOCKED;
 	
-	std::vector<Process> baseProcesses;
+	std::vector<Process> *baseProcesses = new std::vector<Process>();
 
-	//Get Processes List 
-	getProcessList(seed, lambda, upperbound, &baseProcesses, nproc);
+	// Get Processes List 
+	getProcessList(seed, lambda, upperbound, baseProcesses, nproc);
+	
+	
 	
 #ifdef DEBUG_MODE 
 	//Testing function 
-	printArrivalList(baseProcesses);
+	// printArrivalList(baseProcesses, nproc);
+	printSimQ(baseProcesses);
+	printf("Vector ending size is %lu", baseProcesses->size());
+	printf(" First process is %c\n", (*baseProcesses)[0].getId());
 #endif
     /* Run simulations
 	*/

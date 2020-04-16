@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <queue>
 #include <math.h>
 #include "process.h"
@@ -20,8 +21,12 @@ Process::Process( char pid, unsigned int arr
 
 Process::~Process() {
     // delete burst/io time queues
-    delete this->burst_times;
-    delete this->io_times;
+	if(this->burst_times !=NULL){
+		delete this->burst_times;
+	}
+	if(this->io_times != NULL){
+		delete this->io_times;
+	}
 }
 
 void Process::contextSwitch(bool switch_in, unsigned int tcshalf) {
