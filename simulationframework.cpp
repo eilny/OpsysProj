@@ -192,9 +192,9 @@ int main( int argc, char ** argv) {
 	printSimQ(baseProcesses);
 
 	//Test scheduler class construtor 
-	// Scheduler *sch = new Scheduler(*baseProcesses, tcs, timeslice, rraddbgn);
-	// sch->advance();
-	// printf("Scheduler: %lu\n", sch->getTimer());
+	Scheduler *sch = new Scheduler(*baseProcesses, tcs, timeslice, rraddbgn);
+	sch->advance();
+	printf("Scheduler: %lu\n", sch->getTimer());
 	
 #endif
     /* Run simulations

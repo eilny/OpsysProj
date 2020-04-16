@@ -1,5 +1,14 @@
 #include <vector>
+#include <algorithm> 
 #include "scheduler.h"
+
+bool sortByArrvial(Process a, Process b){
+	if(a.getArrival() == b.getArrival()){
+		return (a.getId() < b.getId());
+	}
+	return (a.getArrival() < b.getArrival());
+	
+}
 
 //Constructor
 Scheduler::Scheduler(std::vector<Process> processList,
@@ -14,37 +23,11 @@ Scheduler::Scheduler(std::vector<Process> processList,
 	simulation_timer = 0;
 	hasTimeSlice = false;
 	
-	//Sort the incoming list 
-	for(unsigned int i = 0; i < processList.size(); ++i){
-		Process temp = processList[i];
-		if(i != 0){
-			std::vector<Process>::iterator bg = Incoming.begin();
-			std::vector<Process>::iterator ed = Incoming.end();
-			while(bg != ed){
-				Process comp = *bg;
-				if(temp.getArrival() < comp.getArrival()){
-					Incoming.insert(bg, temp);
-					break;
-				} 
-				else if(temp.getArrival() == comp.getArrival()){
-					if(temp.getId() < comp.getId()){
-						Incoming.insert(bg, temp);
-						break;
-					}
-				}
-				bg++;
-				if(bg == ed){
-					Incoming.push_back(temp);
-				}
-			}
-		}
-		else{
-			Incoming.push_back(temp);
-		}
-		
-	}
+	Incoming = processList;
+	std::sort (Incoming.begin(), Incoming.end(), sortByArrvial);
 
 }
+
 
 
 

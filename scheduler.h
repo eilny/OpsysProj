@@ -25,6 +25,8 @@ class Scheduler {
         bool hasTimeSlice;
         unsigned int timeslice;
 		unsigned int rraddbgn;
+		
+		// bool sortByArrvial(Process a, Process b);
 
     public:
 		//Constructor
@@ -38,6 +40,7 @@ class Scheduler {
         unsigned int timeToNextEvent();
         void advance();
 		unsigned long getTimer();
+		
 };
 
 #endif
