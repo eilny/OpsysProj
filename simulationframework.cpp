@@ -84,7 +84,7 @@ void printSimQ(std::vector<Process> queue){
 
 // Printing statements 
 // Needs to be modified for process class
-// void printProcessState(PrintState p, int time, Process cur, float tau){
+void printProcessState(PrintState p, int time, Process cur, float tau){
 	
 	// if( p == ARRIVE ){
 		// if(0 != tau){
@@ -116,7 +116,7 @@ void printSimQ(std::vector<Process> queue){
 		// printf("time %dms: Process %c terminated ", time, cur.getId());
 	// }
 	// fflush(stdout);
-// }
+}
 
 
 int main( int argc, char ** argv) {

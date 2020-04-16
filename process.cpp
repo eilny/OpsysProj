@@ -11,7 +11,7 @@ Process::Process( char pid, unsigned int arr
     , num_bursts(nbursts)
 {
     // initialize turnaround, wait, and burst/io queues
-	this->processed_time = 0;
+	this->remaining_time = 0;
     this->turnaround_time = 0;
     this->wait_time = 0;
     this->burst_times = new std::queue<unsigned int>;
