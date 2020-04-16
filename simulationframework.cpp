@@ -33,42 +33,53 @@ int getNumBurst() {
 	return (int) std::ceil((r * 100));
 }
 
+//Setups up process list 
 void getProcessList(int seed, float lambda, int maxTime, std::vector<Process> processes, int numProcess){
-	srand48(seed);
+	srand48(seed); //Seeds the rng 
+	//Fills in each process for total process 
 	for(int i = 0; i < numProcess; i++){
 		int arr = floor(getTime(lambda, maxTime));
 		int bursts = getNumBurst();
 		Process *temp = new Process(processName[i], arr, bursts);
-		// temp->getBurstTimes(lambda, maxTime);
-		// fprintf(stdout, "Process %c [NEW] (arrival time %d ms) %d CPU bursts\n", temp->getId(), temp->getArrival(), temp->getBurstNum()); 
-		// if(i != 0){
-			// vector<Process>::iterator bg = processes.begin();
-			// vector<Process>::iterator ed = processes.end();
-			// while(bg != ed){
-				// Process comp = *bg;
-				// if(temp->getArrival() < comp.getArrival()){
-					// processes.insert(bg, *temp);
-					// break;
-				// } 
-				// else if(temp->getArrival() == comp.getArrival()){
-					// if(temp->getId() < comp.getId()){
-						// processes.insert(bg, *temp);
-						// break;
-					// }
-				// }
-				// bg++;
-				// if(bg == ed){
-					// processes.push_back(*temp);
-				// }
-			// }
-		// }
-		// else{
-			// processes.push_back(*temp);
-		// }
+		for(int j = 0; j < bursts; j++){
+			temp->addBurst(ceil(getTime(lambda, maxTime)));
+			if( j == (bursts - 1)){
+				break;
+			}
+			temp->addIo(ceil(getTime(lambda, maxTime)));
+		}
 	}
 	
-	
 } 
+
+//Prints Starting Arrival list 
+void printArrivalList(std::vector<Process> processes){
+	std::vector<Process>::iterator iter = processes.begin();
+	while(iter != processes.end()){
+		Process temp = *iter;
+		fprintf(stdout, "Process %c [NEW] (arrival time %d ms) %d CPU bursts\n", temp.getId(), temp.getArrival(), temp.getNumBursts()); 
+		++iter;
+	}
+}
+
+//Print Simulation Queue
+void printSimQ(std::vector<Process> queue){
+	printf("[Q");
+	if(queue.empty()){
+		printf(" <empty>]\n");
+		return;
+	}
+	std::vector<Process>::iterator bg = queue.begin();
+	std::vector<Process>::iterator ed = queue.end();
+	
+	while(bg != ed){
+		Process p = *bg;
+		printf(" %c", p.getId());
+		bg++;
+	}
+	printf("]\n");
+	
+}
 
 
 // Printing statements 
@@ -168,6 +179,9 @@ int main( int argc, char ** argv) {
 	
 	std::vector<Process> baseProcesses;
 
+	//Get Processes List 
+	getProcessList(seed, lambda, upperbound, baseProcesses, nproc);
+	
     /* Run simulations
 	*/
 
