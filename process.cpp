@@ -12,12 +12,10 @@ Process::Process( char pid, unsigned int arr
     , num_bursts(nbursts)
 {
     // initialize turnaround, wait, and burst/io queues
-	this->remaining_burst = 0;
-	this->remaining_io = 0;
     this->turnaround_time = 0;
     this->wait_time = 0;
-    this->burst_times = new std::queue<unsigned int>;
-    this->io_times = new std::queue<unsigned int>;
+    this->burst_times = new std::vector<unsigned int>;
+    this->io_times = new std::vector<unsigned int>;
 }
 
 Process::~Process() {
@@ -41,10 +39,10 @@ void Process::contextSwitch(bool switch_in, unsigned int tcshalf) {
 }
 
 void Process::addBurst(unsigned int time){
-	this->burst_times->push(time);
+	this->burst_times->push_back(time);
 }
 void Process::addIo(unsigned int time){
-	this->io_times->push(time);
+	this->io_times->push_back(time);
 }
 char Process::getId(){
 	return this->process_ID;
@@ -63,17 +61,25 @@ State Process::setState(State newstate) {
 }
 
 unsigned int Process::burstTimeLeft() {
-    return this->remaining_burst;
+    return *this->burst_times->begin();
 }
 
 unsigned int Process::ioTimeLeft() {
-    return this->remaining_io;
+    return *this->io_times->begin();
 }
 
 void Process::doWork(unsigned int deltaT) {
-    this->remaining_burst -= deltaT;
+    std::vector<unsigned int>::iterator burst = this->burst_times->begin();
+    *burst -= deltaT;
+    if (*burst == 0) {
+        // finished CPU burst
+    }
 }
 
 void Process::doIO(unsigned int deltaT) {
-    this->remaining_io -= deltaT;
+    std::vector<unsigned int>::iterator io = this->io_times->begin();
+    *io -= deltaT;
+    if (*io == 0) {
+        // finished IO block
+    }
 }

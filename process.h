@@ -16,16 +16,11 @@ class Process {
         unsigned int arrival_time; 
         unsigned int num_bursts;
 
-        unsigned int remaining_burst;
-        //Remaining time for popped burst time (processed time doesn't help much)
-        unsigned int remaining_io;
-        //Remaining time for popped io time (processed time doesn't help much)
-
         unsigned int turnaround_time;
         unsigned int wait_time;
 
-        std::queue<unsigned int> * burst_times;
-        std::queue<unsigned int> * io_times;
+        std::vector<unsigned int> * burst_times;
+        std::vector<unsigned int> * io_times;
 
 			
 		State state;
