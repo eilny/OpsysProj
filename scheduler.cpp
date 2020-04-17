@@ -23,7 +23,7 @@ Scheduler::Scheduler(std::vector<Process> processList,
 	avgburst = 0;
 	avgturnaround = 0;
 	preemptions = 0;
-	remainingtime = 0;
+	remainingtimeslice = 0;
 	simulation_timer = 0;
 	numCS = 0;
 	nextCS = 0;
@@ -47,13 +47,15 @@ void Scheduler::contextSwitch(Process toIO, Process toCPU) {
     //  move toCPU from queue (READY) to cpu (RUNNING)
 
     // update timing? deal with context switch times
-    //this->simulation_timer += this->tcs/2;
     this->BLOCKED.push_back(*this->RUNNING);
+    // should call process contextSwitch here
     State temp = BLK;
     this->RUNNING->setState(temp);
-    //this->simulation_timer += this->tcs/2;
+
     std::vector<Process>::iterator bg = READY.begin();
     this->RUNNING = this->READY.erase(bg);
+
+    // should call process contextSwitch here
     temp = RUN;
     this->RUNNING->setState(temp);
 
@@ -82,8 +84,14 @@ unsigned int Scheduler::timeToNextEvent() {
         }
     }
 
-    if (this->nextCS < deltaT) {
-        deltaT = this->nextCS;
+    if (this->switching) {
+        if (this->nextCS < deltaT) {
+            deltaT = this->nextCS;
+        }
+        /*
+    } else {
+        this->nextCS = 0;
+        */
     }
 
     if (this->RUNNING->burstTimeLeft() < deltaT) {
@@ -113,6 +121,12 @@ void Scheduler::advance() {
 
     // advance timer
     this->simulation_timer += deltaT;
+    if (reaminingtimeslice) {
+        remainingtimeslice -= deltaT;
+    }
+    if (nextCS) {
+        nextCS -= deltaT;
+    }
 
     // ties order: CPU burst, IO burst, arrival - with process ID as backup
     // check if process is done running/blocking
@@ -120,13 +134,15 @@ void Scheduler::advance() {
         // will trigger when should be switching in/out
         // finished, context switch
         this->RUNNING->contextSwitch(false);
+        // half to start switching in next process
         this->nextCS = tcs/2;
     }
 
-    if (switching) {
-        this->nextCS = tcs/2;
+    if (switching && 0 == nextCS) {
         this->RUNNING = READY.begin();
         this->RUNNING->contextSwitch(true);
+        // if switching in
+        nextCS = tcs/2;
     }
 
     std::vector<Process>::iterator bg = BLOCKED.begin();

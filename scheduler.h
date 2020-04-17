@@ -13,7 +13,6 @@ class Scheduler {
         std::vector<Process> READY;
         std::vector<Process> BLOCKED;
         std::vector<Process>::iterator RUNNING;
-        std::vector<Process>::iterator IO;
 
         // simulation timer
         unsigned long simulation_timer = 0;
@@ -32,7 +31,7 @@ class Scheduler {
 
         bool hasTimeSlice;
         unsigned int timeslice;
-        unsigned int remainingtime; // for detecting end of timeslice
+        unsigned int remainingtimeslice; // for detecting end of timeslice
 		unsigned int rraddbgn;
 		
 		// bool sortByArrvial(Process a, Process b);
