@@ -6,14 +6,16 @@
 
 
 Process::Process( char pid, unsigned int arr
-        , unsigned int nbursts)
+        , unsigned int nbursts, float lambda, float alp)
     : process_ID(pid)
     , arrival_time(arr)
     , num_bursts(nbursts)
+	, alpha(alp)
 {
     // initialize turnaround, wait, and burst/io queues
     this->turnaround_time = 0;
     this->wait_time = 0;
+	this->tau = 1/lambda;
     this->burst_times = new std::vector<unsigned int>;
     this->io_times = new std::vector<unsigned int>;
 }
@@ -57,6 +59,10 @@ unsigned int Process::getNumBursts(){
 	return this->num_bursts;
 }
 
+float Process::getTau(){
+	return this->tau;
+}
+
 State Process::setState(State newstate) {
     this->state = newstate;
     return this->state;
@@ -89,3 +95,10 @@ bool Process::doIO(unsigned int deltaT) {
     }
     return false;
 }
+
+void Process::recalculateTau(int burstTime){
+	this->tau = (this->alpha)*(burstTime + (this->tau));
+	
+}
+
+

@@ -18,6 +18,9 @@ class Process {
 
         unsigned int turnaround_time;
         unsigned int wait_time;
+		
+		float tau;
+		float alpha;
 
         std::vector<unsigned int> * burst_times;
         std::vector<unsigned int> * io_times;
@@ -27,19 +30,25 @@ class Process {
 		
 	public:
 	//Get & Set functions for accessing the variables 	
-        Process(char pid, unsigned int arr, unsigned int processed);
+        Process(char pid, unsigned int arr, unsigned int processed, float lambda, float alp);
         ~Process();
         void contextSwitch(bool switch_in);
 		void addBurst(unsigned int time);
 		void addIo(unsigned int time);
+		
 		char getId();
 		unsigned int getArrival();
 		unsigned int getNumBursts();
+		float getTau();
+		
+		
         State setState(State newstate);
         unsigned int burstTimeLeft();
         unsigned int ioTimeLeft();
         bool doWork(unsigned int deltaT);
         bool doIO(unsigned int deltaT);
+		void recalculateTau(int burstTime);
+
 		
 };
 #endif

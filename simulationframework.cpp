@@ -34,13 +34,13 @@ int getNumBurst() {
 }
 
 //Setups up process list 
-void getProcessList(int seed, float lambda, int maxTime, std::vector<Process> *processes, int numProcess){
+void getProcessList(int seed, float lambda, int maxTime, std::vector<Process> *processes, int numProcess, float alpha){
 	srand48(seed); //Seeds the rng 
 	//Fills in each process for total process 
 	for(int i = 0; i < numProcess; i++){
 		int arr = floor(getTime(lambda, maxTime));
 		int bursts = getNumBurst();
-		Process *temp = new Process(processName[i], arr, bursts);
+		Process *temp = new Process(processName[i], arr, bursts, lambda, alpha);
 		for(int j = 0; j < bursts; j++){
 			temp->addBurst(ceil(getTime(lambda, maxTime)));
 			if( j == (bursts - 1)){
@@ -123,7 +123,7 @@ int main( int argc, char ** argv) {
 	std::vector<Process> *baseProcesses = new std::vector<Process>();
 
 	// Get Processes List 
-	getProcessList(seed, lambda, upperbound, baseProcesses, nproc);
+	getProcessList(seed, lambda, upperbound, baseProcesses, nproc, alpha);
 	
 	
 	
