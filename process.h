@@ -29,7 +29,7 @@ class Process {
 	//Get & Set functions for accessing the variables 	
         Process(char pid, unsigned int arr, unsigned int processed);
         ~Process();
-        void contextSwitch(bool switch_in, unsigned int tcshalf);
+        void contextSwitch(bool switch_in);
 		void addBurst(unsigned int time);
 		void addIo(unsigned int time);
 		char getId();
@@ -38,8 +38,8 @@ class Process {
         State setState(State newstate);
         unsigned int burstTimeLeft();
         unsigned int ioTimeLeft();
-        void doWork(unsigned int deltaT);
-        void doIO(unsigned int deltaT);
+        bool doWork(unsigned int deltaT);
+        bool doIO(unsigned int deltaT);
 		
 };
 #endif

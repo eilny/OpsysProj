@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 #include <queue>
+
 #include "process.h"
 #include "scheduler.h"
 
@@ -197,7 +198,14 @@ int main( int argc, char ** argv) {
 	printf("Scheduler: %lu\n", sch->getTimer());
 	
 #endif
+
     /* Run simulations
+    Scheduler FCFS(baseProcesses);
+    Scheduler RR(baseProcesses);
+    Scheduler SJF(baseProcesses);
+    Scheduler SRT(baseProcesses);
+
+    FCFS.advance();
 	*/
 
 }

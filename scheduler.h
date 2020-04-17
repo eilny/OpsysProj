@@ -8,7 +8,7 @@
 // parent class for scheduling algorithms
 class Scheduler {
     private:
-        std::vector<Process> Incoming;
+        std::vector<Process> ARRIVAL;
 
         std::vector<Process> READY;
         std::vector<Process> BLOCKED;
@@ -19,11 +19,20 @@ class Scheduler {
         unsigned long simulation_timer = 0;
 
         float avgwait;
-        unsigned int preemptions;
+        float avgburst;
+        float avgturnaround;
+
+        unsigned int numCS;
         unsigned int tcs;
+        unsigned int nextCS; // for detecting next of context switch event
+        bool switching;
+
+        bool isPreemptive;
+        unsigned int preemptions;
 
         bool hasTimeSlice;
         unsigned int timeslice;
+        unsigned int remainingtime; // for detecting end of timeslice
 		unsigned int rraddbgn;
 		
 		// bool sortByArrvial(Process a, Process b);

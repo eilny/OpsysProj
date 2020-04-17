@@ -28,13 +28,15 @@ Process::~Process() {
 	}
 }
 
-void Process::contextSwitch(bool switch_in, unsigned int tcshalf) {
+void Process::contextSwitch(bool switch_in) {
     if (switch_in) {
-        this->wait_time += tcshalf;
         this->state = RUN;
     }
     else {
         this->state = BLK;
+        // remove the cpu burst time from vector
+        std::vector<unsigned int>::iterator finished = burst_times->begin();
+        this->burst_times->erase(finished);
     }
 }
 
@@ -68,18 +70,22 @@ unsigned int Process::ioTimeLeft() {
     return *this->io_times->begin();
 }
 
-void Process::doWork(unsigned int deltaT) {
+bool Process::doWork(unsigned int deltaT) {
     std::vector<unsigned int>::iterator burst = this->burst_times->begin();
     *burst -= deltaT;
     if (*burst == 0) {
         // finished CPU burst
+        return true;
     }
+    return false;
 }
 
-void Process::doIO(unsigned int deltaT) {
+bool Process::doIO(unsigned int deltaT) {
     std::vector<unsigned int>::iterator io = this->io_times->begin();
     *io -= deltaT;
     if (*io == 0) {
         // finished IO block
+        return true;
     }
+    return false;
 }

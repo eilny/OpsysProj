@@ -20,11 +20,19 @@ Scheduler::Scheduler(std::vector<Process> processList,
 		,	rraddbgn(rr)
 {
 	avgwait = 0;
+	avgburst = 0;
+	avgturnaround = 0;
+	preemptions = 0;
+	remainingtime = 0;
 	simulation_timer = 0;
+	numCS = 0;
+	nextCS = 0;
 	hasTimeSlice = false;
+	isPreemptive = false;
+	switching = false;
 	
-	Incoming = processList;
-	std::sort (Incoming.begin(), Incoming.end(), sortByArrvial);
+	ARRIVAL = processList;
+	std::sort (ARRIVAL.begin(), ARRIVAL.end(), sortByArrvial);
 
 }
 
@@ -48,6 +56,8 @@ void Scheduler::contextSwitch(Process toIO, Process toCPU) {
     this->RUNNING = this->READY.erase(bg);
     temp = RUN;
     this->RUNNING->setState(temp);
+
+    switching = true;
     return;
 }
 
@@ -67,41 +77,87 @@ unsigned int Scheduler::timeToNextEvent() {
     --deltaT; // largest possible unsigned int value
 
     if (this->hasTimeSlice) {
-        if (this->timeslice < deltaT) {
-            deltaT = this->timeslice;
+        if (this->remainingtime < deltaT) {
+            deltaT = this->remainingtime;
         }
     }
 
-    // check  next arrival time (first element should be fine)
-    std::vector<Process>::iterator arr = this->Incoming.begin();
-    if (arr->getArrival() < deltaT) {
-        deltaT = arr->getArrival();
+    if (this->nextCS < deltaT) {
+        deltaT = this->nextCS;
     }
 
     if (this->RUNNING->burstTimeLeft() < deltaT) {
         deltaT = this->RUNNING->burstTimeLeft();
     }
 
-    if (this->IO->ioTimeLeft() < deltaT) {
-        deltaT = this->IO->ioTimeLeft();
+    std::vector<Process>::iterator bg = BLOCKED.begin();
+    std::vector<Process>::iterator ed = BLOCKED.end();
+    while (bg != ed) {
+        if (bg->ioTimeLeft() < deltaT) {
+            deltaT = bg->ioTimeLeft();
+        }
+    }
+
+    // check  next arrival time (first element should be fine)
+    std::vector<Process>::iterator arr = this->ARRIVAL.begin();
+    if (arr->getArrival() < deltaT) {
+        deltaT = arr->getArrival();
     }
 
     return deltaT;
 }
 
 void Scheduler::advance() {
-    // can maybe do smarter - advance to next event?
+    // advance to next event
+    unsigned int deltaT = this->timeToNextEvent();
 
-    // simulate next step
-    ++this->simulation_timer;
-    // replace with a deltaT, update all vals based on that
+    // advance timer
+    this->simulation_timer += deltaT;
+
+    // ties order: CPU burst, IO burst, arrival - with process ID as backup
+    // check if process is done running/blocking
+    if ( !this->switching && this->RUNNING->doWork(deltaT) ) {
+        // will trigger when should be switching in/out
+        // finished, context switch
+        this->RUNNING->contextSwitch(false);
+        this->nextCS = tcs/2;
+    }
+
+    if (switching) {
+        this->nextCS = tcs/2;
+        this->RUNNING = READY.begin();
+        this->RUNNING->contextSwitch(true);
+    }
+
+    std::vector<Process>::iterator bg = BLOCKED.begin();
+    std::vector<Process>::iterator ed = BLOCKED.end();
+    while (bg != ed) {
+        if (bg->doIO(deltaT) ) {
+            // finished, put back in READY, swap in next IO
+            if (this->isPreemptive) {
+                // handle preemption?
+            } else {
+                // add to READY?
+                this->READY.push_back(*bg);
+            }
+        }
+    }
+
+    // try to add new processes to queues
+    std::vector<Process>::iterator proc = this->ARRIVAL.begin();
+    while(proc->getArrival() == this->simulation_timer) {
+        // add to READY? RUNNING?
+        if (this->isPreemptive) {
+            // handle preemption?
+        } else {
+            // add to READY?
+            this->READY.push_back(*proc);
+        }
+    }
+
+    // end of timeslice/preemption?
 
     /*
-	std::vector<unsigned int>::iterator burst = RUNNING->burst_times.begin();
-    --burst;
-	std::vector<unsigned int>::iterator io = RUNNING->io_times.begin();
-    --io;
-
     // increment wait times
 	std::vector<Process>::iterator waiting = READY.begin();
 	std::vector<Process>::iterator ed = READY.end();
@@ -110,6 +166,7 @@ void Scheduler::advance() {
         ++waiting;
     }
     */
+
 }
 		
 unsigned long Scheduler::getTimer(){
