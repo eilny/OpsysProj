@@ -14,8 +14,6 @@
 //for picking out process names  
 std::string processName = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
-//For picking print statements
-enum PrintState {ARRIVE, START, COMPLETED, BLOCK, IOCOMPLETED, TAU, TERMINATED};
 
 //Get arrival time (and other times I think) remember to floor the returned value for the correct values 
 float getTime(float lambda, float max){
@@ -61,64 +59,6 @@ void printArrivalList(std::vector<Process> processes, int numProcess){
 		fprintf(stdout, "Process %c [NEW] (arrival time %d ms) %d CPU bursts\n", processes[i].getId(), processes[i].getArrival(), processes[i].getNumBursts()); 
 	}
 }
-
-//Print Simulation Queue
-void printSimQ(std::vector<Process> *queue){
-	printf("[Q");
-	if(queue->empty()){
-		printf(" <empty>]\n");
-		return;
-	}
-	std::vector<Process>::iterator bg = queue->begin();
-	std::vector<Process>::iterator ed = queue->end();
-	
-	while(bg != ed){
-		Process p = *bg;
-		printf(" %c", p.getId());
-		bg++;
-	}
-	printf("]\n");
-	
-}
-
-
-// Printing statements 
-// Needs to be modified for process class
-void printProcessState(PrintState p, int time, Process cur, float tau){
-	if( p == ARRIVE ){
-		if(0 != tau){
-			printf("time %dms: Process %c (tau %.0fms) arrived; added to ready queue ", time, cur.getId(), tau);
-		}else{
-			printf("time %dms: Process %c arrived; added to ready queue ", time, cur.getId());
-		}
-	}
-	if(p == START){
-		// printf("time %dms: Process %c started using the CPU for %dms burst ", time, cur.getId(), cur.getBurst());
-	}
-	if(p == COMPLETED){
-		// printf("time %dms: Process %c completed a CPU burst; %d bursts to go ", time, cur.getId(), cur.getRemainBurst());
-	}
-	if(p == BLOCK){
-		// printf("time %dms: Process %c switching out of CPU; will block on I/O until time %dms", time, cur.getId(), time+cur.getIo());
-	}
-	if(p == IOCOMPLETED){
-		if(0 != tau){
-			printf("time %dms: Process %c (tau %.0fms) completed I/O; added to ready queue ", time, cur.getId(), tau);
-		}else{
-			printf("time %dms: Process %c completed I/O; added to ready queue ", time, cur.getId());
-		}
-	}
-	if(p == TAU){
-		printf("time %dms: Recalculated tau = %.0fms for process %c ", time, tau, cur.getId());
-	}
-	if(p == TERMINATED){
-		printf("time %dms: Process %c terminated ", time, cur.getId());
-	}
-	fflush(stdout);
-}
-
-
-// Sort Processes by arriving time 
 
 
 int main( int argc, char ** argv) {
@@ -190,7 +130,7 @@ int main( int argc, char ** argv) {
 #ifdef DEBUG_MODE 
 	//Testing function 
 	// printArrivalList(baseProcesses, nproc);
-	printSimQ(baseProcesses);
+	// printSimQ(baseProcesses);
 
 	//Test scheduler class construtor 
 	Scheduler *sch = new Scheduler(baseProcesses, tcs, timeslice, rraddbgn);
