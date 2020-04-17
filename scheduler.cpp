@@ -1,3 +1,5 @@
+#include <stdio.h>
+#include <stdlib.h>
 #include <vector>
 #include <algorithm> 
 #include "scheduler.h"
@@ -11,7 +13,7 @@ bool sortByArrvial(Process a, Process b){
 }
 
 //Constructor
-Scheduler::Scheduler(std::vector<Process> processList,
+Scheduler::Scheduler(std::vector<Process> *processList,
 			unsigned int tcontext,
 			unsigned int tmslice, 
 			unsigned int rr)
@@ -31,8 +33,8 @@ Scheduler::Scheduler(std::vector<Process> processList,
 	isPreemptive = false;
 	switching = false;
 	
-	ARRIVAL = processList;
-	std::sort (ARRIVAL.begin(), ARRIVAL.end(), sortByArrvial);
+	this->ARRIVAL = *processList;
+	std::sort (this->ARRIVAL.begin(), this->ARRIVAL.end(), sortByArrvial);
 
 }
 
@@ -79,8 +81,8 @@ unsigned int Scheduler::timeToNextEvent() {
     --deltaT; // largest possible unsigned int value
 
     if (this->hasTimeSlice) {
-        if (this->remainingtime < deltaT) {
-            deltaT = this->remainingtime;
+        if (this->remainingtimeslice < deltaT) {
+            deltaT = this->remainingtimeslice;
         }
     }
 
@@ -121,8 +123,8 @@ void Scheduler::advance() {
 
     // advance timer
     this->simulation_timer += deltaT;
-    if (reaminingtimeslice) {
-        remainingtimeslice -= deltaT;
+    if (this->remainingtimeslice) {
+        this->remainingtimeslice -= deltaT;
     }
     if (nextCS) {
         nextCS -= deltaT;

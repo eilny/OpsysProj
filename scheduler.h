@@ -38,7 +38,7 @@ class Scheduler {
 
     public:
 		//Constructor
-		Scheduler(std::vector<Process> processList,
+		Scheduler(std::vector<Process> *processList,
 			unsigned int tcontext,
 			unsigned int tmslice, 
 			unsigned int rr);
