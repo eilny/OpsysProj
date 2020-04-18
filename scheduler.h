@@ -65,7 +65,7 @@ class Scheduler {
                 , unsigned int time, enum eventType type);
         unsigned int nextEvent();
         void advance();
-        void fastForward(unsigned int deltaT) {
+        void fastForward(unsigned int deltaT);
 		unsigned long getTimer();
 		
 };
