@@ -1,5 +1,6 @@
 #include <vector>
 #include <queue>
+#include <string>
 #include "Process.h"
 
 #ifndef _H_SCHEDULER_H_
@@ -35,6 +36,7 @@ class Scheduler {
         float avgwait;
         float avgburst;
         float avgturnaround;
+		
 
         unsigned int numCS;
         unsigned int tcs;
@@ -58,15 +60,20 @@ class Scheduler {
 			unsigned int tcontext,
 			unsigned int tmslice, 
 			unsigned int rr);
+		void setAlgorithm(std::string algo);
+	
 	
         void contextSwitch();
         void processArrival(Process newProcess);
         void storeEventIfSooner(std::vector<Event> & events
                 , unsigned int time, enum eventType type);
         unsigned int nextEvent();
-        void advance();
+		std::vector<Event> nextEvents();
+        bool advance();
         void fastForward(unsigned int deltaT);
 		unsigned long getTimer();
+		
+		void runSimulation();
 		
 };
 

@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <vector>
 #include <algorithm> 
-
+#include <string>
 #include "scheduler.h"
 
 
@@ -73,6 +73,7 @@ void printProcessState(PrintState p, int time, Process cur, float tau){
     fflush(stdout);
 }
 
+//////////////////////////////////Start of Class definitions//////////////////////////////////
 
 //Constructor
 Scheduler::Scheduler(std::vector<Process> *processList,
@@ -101,7 +102,28 @@ Scheduler::Scheduler(std::vector<Process> *processList,
 
 }
 
-
+//Sets the Algorithm states 
+void Scheduler::setAlgorithm(std::string algo){
+	if(algo == "FCFS"){
+		isPreemptive = false;
+		hasTimeSlice = false;
+		
+	}
+	if(algo == "SJF"){
+		isPreemptive = false;
+		hasTimeSlice = false;
+	}
+	if(algo == "SRT"){
+		isPreemptive = true;
+		hasTimeSlice = false;
+	}
+	if(algo == "RR"){
+		isPreemptive = true;
+		hasTimeSlice = true;
+	
+	}
+	
+}
 
 
 
@@ -123,7 +145,7 @@ void Scheduler::contextSwitch() {
         while (iobegin != ioend) {
             if (iobegin->doIO(tcs/2)) {
                 // return to READY
-                READY.push_back(iobegin);
+               this->READY.push_back(*iobegin);
                 BLOCKED.erase(iobegin);
             }
             ++iobegin;
@@ -134,7 +156,7 @@ void Scheduler::contextSwitch() {
         while (arr != arrend) {
             if (arr->advanceArrival(tcs/2)) {
                 // process arrives, add to READY
-                READY.push_back(arr);
+                READY.push_back(*arr);
                 ARRIVAL.erase(arr);
             }
             ++arr;
@@ -146,7 +168,7 @@ void Scheduler::contextSwitch() {
     if (!READY.empty()) {
         std::vector<Process>::iterator bg = READY.begin();
         bg->contextSwitch(true);
-        this->RUNNING = *this->READY.erase(bg);
+        this->RUNNING = &(*this->READY.erase(bg));
         // advance timer here
         simulation_timer += tcs/2;
         // also advance io
@@ -155,7 +177,7 @@ void Scheduler::contextSwitch() {
         while (iobegin != ioend) {
             if (iobegin->doIO(tcs/2)) {
                 // return to READY
-                READY.push_back(iobegin);
+                READY.push_back(*iobegin);
                 BLOCKED.erase(iobegin);
             }
             ++iobegin;
@@ -166,7 +188,7 @@ void Scheduler::contextSwitch() {
         while (arr != arrend) {
             if (arr->advanceArrival(tcs/2)) {
                 // process arrives, add to READY
-                READY.push_back(arr);
+                READY.push_back(*arr);
                 ARRIVAL.erase(arr);
             }
             ++arr;
@@ -276,7 +298,7 @@ void Scheduler::fastForward(unsigned int deltaT) {
     while (iobegin != ioend) {
         if (iobegin->doIO(deltaT)) {
             // return to READY
-            READY.push_back(iobegin);
+            READY.push_back(*iobegin);
             BLOCKED.erase(iobegin);
         }
         ++iobegin;
@@ -288,7 +310,7 @@ void Scheduler::fastForward(unsigned int deltaT) {
     while (arr != arrend) {
         if (arr->advanceArrival(deltaT)) {
             // process arrives, add to READY
-            READY.push_back(arr);
+            READY.push_back(*arr);
             ARRIVAL.erase(arr);
         }
         ++arr;
@@ -321,5 +343,13 @@ bool Scheduler::advance() {
 
 unsigned long Scheduler::getTimer(){
     return this->simulation_timer;
+
 }
+
+void Scheduler::runSimulation(){
+	while(!ARRIVAL.empty() || !READY.empty() || BLOCKED.empty() || RUNNING != NULL){
+		this->advance();
+	}
+}
+
 
