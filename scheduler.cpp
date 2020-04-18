@@ -92,7 +92,8 @@ Scheduler::Scheduler(std::vector<Process> *processList,
 	nextCS = 0;
 	hasTimeSlice = false;
 	isPreemptive = false;
-	switching = false;
+	switchIN = false;
+	switchOUT = false;
 	
 	this->ARRIVAL = *processList;
 	std::sort (this->ARRIVAL.begin(), this->ARRIVAL.end(), sortByArrvial);
@@ -122,7 +123,9 @@ void Scheduler::contextSwitch(Process toIO, Process toCPU) {
     temp = RUN;
     this->RUNNING->setState(temp);
 
-    switching = true;
+    // TODO: fix in/out switch flags
+    switchIN = true;
+    switchOUT = true;
     return;
 }
 
@@ -133,119 +136,148 @@ void Scheduler::processArrival(Process newProcess) {
     return;
 }
 
-unsigned int Scheduler::timeToNextEvent() {
-    // check arriving processes
-    // check timeslice
-    // check burst complete
-    // check io complete
-    unsigned int deltaT = 0;
-    --deltaT; // largest possible unsigned int value
+enum eventType {
+    burstDone
+    , ioDone
+    , arrival
+    , timeslice
+    , switchOUT
+    , switchIN
+};
 
-    if (this->hasTimeSlice) { //if there's a timeslice 
-        if (this->remainingtimeslice < deltaT) {
-            deltaT = this->remainingtimeslice;
-        }
+struct Event {
+    unsigned int timeToEvent;
+    eventType type;
+};
+
+void Scheduler::storeEventIfSooner(std::vector<Event> & events
+        , unsigned int time, enum eventType type) {
+    Event next;
+    next.timeToEvent = time;
+    next.type = type;
+
+    if (events.empty() || time == events[0].timeToEvent) {
+        events.push_back(next);
+    } else if (time < events[0].timeToEvent) {
+        events.clear();
+        events.push_back(next);
     }
-
-    if (this->switching) { //Context switching 
-        if (this->nextCS < deltaT) {
-            deltaT = this->nextCS;
-        }
-        /*
-    } else {
-        this->nextCS = 0;
-        */
-    }
-
-    if (this->RUNNING->burstTimeLeft() < deltaT) { //Get the remaing burst time 
-        deltaT = this->RUNNING->burstTimeLeft();
-    }
-
-    std::vector<Process>::iterator bg = BLOCKED.begin();
-    std::vector<Process>::iterator ed = BLOCKED.end();
-    while (bg != ed) {
-        if (bg->ioTimeLeft() < deltaT) {
-            deltaT = bg->ioTimeLeft();
-        }
-    }
-
-    // check  next arrival time (first element should be fine)
-    std::vector<Process>::iterator arr = this->ARRIVAL.begin();
-    if (arr->getArrival() < deltaT) {
-        deltaT = arr->getArrival();
-    }
-
-    return deltaT;
+    return;
 }
 
-void Scheduler::advance() {
+std::vector<Event> Scheduler::nextEvents() {
+
+    std::vector<unsigned int> nextEvents;
+    struct Event ne; //placeholder
+    enum eventType type;
+
+    // check burst complete
+    type = burstDone;
+    if (!switchIN && !switchOUT && RUNNING) {
+        storeEventIfSooner(nextEvents, RUNNING->burstTimeLeft(), type);
+    }
+
+    // check io complete
+    type = ioDone;
+    std::vector<Process>::iterator iobegin = BLOCKED.begin();
+    std::vector<Process>::iterator ioend = BLOCKED.end();
+    while (iobegin != ioend) {
+        storeEventIfSooner(nextEvents, iobegin->ioTimeLeft(), type);
+        ++iobegin;
+    }
+
+    // check arriving processes
+    type = arrival;
+    std::vector<Process>::iterator arr = this->ARRIVAL.begin();
+    std::vector<Process>::iterator arrend = this->ARRIVAL.end();
+    while (arr != arrend) {
+        // TODO: quit after arrival is no longer the same value?
+        // that's mostly for efficiency, who cares atm
+        storeEventIfSooner(nextEvents, arr->getArrival(), type);
+        ++arr;
+    }
+
+    // check timeslice if algo is timeslice based
+    type = timeslice;
+    if (this->hasTimeSlice) {
+        storeEventIfSooner(nextEvents, remainingtimeslice, type);
+    }
+
+    // check switch out/switch in
+    if (switchOUT || switchIN) {
+        storeEventIfSooner(nextEvents, nextCS, type);
+    }
+
+    return nextEvents;
+}
+
+void Scheduler::fastForward(deltaT) {
+    // simulation moves forward
+    simulation_timer += deltaT;
+    if (remainingtimeslice) {
+        // if timeslice based, less time in slice left
+        remainingtimeslice -= deltaT;
+        if (0 == remainingtimeslice) {
+            // timeslice done, context switch
+            // return to READY queue
+        }
+    }
+
+    // cpu burst
+    if (RUNNING) {
+        if (RUNNING->doWork(deltaT)) {
+            // burst finisheds - context switch
+            contextSwitch();
+        }
+    }
+
+    // io block
+    std::vector<Process>::iterator iobegin = BLOCKED.begin();
+    std::vector<Process>::iterator ioend = BLOCKED.end();
+    while (iobegin != ioend) {
+        if (iobegin->doIO(deltaT)) {
+            // return to READY
+            READY.push_back(iobegin);
+            BLOCKED.erase(iobegin);
+        }
+        ++iobegin;
+    }
+
+    // arriving processes
+    std::vector<Process>::iterator arr = this->ARRIVAL.begin();
+    std::vector<Process>::iterator arrend = this->ARRIVAL.end();
+    while (arr != arrend) {
+        if (arr->advanceArrival(deltaT)) {
+            // process arrives, add to READY
+            READY.push_back(arr);
+            ARRIVAL.erase(arr);
+        }
+        ++arr;
+    }
+
+    // finished updating time vars
+    return;
+}
+
+bool Scheduler::advance() {
+    // return true if advanced onwards
+    // return false if finished
+
     // advance to next event
-    unsigned int deltaT = this->timeToNextEvent();
-
-    // advance timer
-    this->simulation_timer += deltaT;
-    if (this->remainingtimeslice) {
-        this->remainingtimeslice -= deltaT;
-    }
-    if (nextCS) {
-        nextCS -= deltaT;
-    }
-
-    // ties order: CPU burst, IO burst, arrival - with process ID as backup
-    // check if process is done running/blocking
-    if ( !this->switching && this->RUNNING->doWork(deltaT) ) {
-        // will trigger when should be switching in/out
-        // finished, context switch
-        this->RUNNING->contextSwitch(false);
-        // half to start switching in next process
-        this->nextCS = tcs/2;
-    }
-
-    if (switching && 0 == nextCS) {
-        this->RUNNING = READY.begin();
-        this->RUNNING->contextSwitch(true);
-        // if switching in
-        nextCS = tcs/2;
-    }
-
-    std::vector<Process>::iterator bg = BLOCKED.begin();
-    std::vector<Process>::iterator ed = BLOCKED.end();
-    while (bg != ed) {
-        if (bg->doIO(deltaT) ) {
-            // finished, put back in READY, swap in next IO
-            if (this->isPreemptive) {
-                // handle preemption?
-            } else {
-                // add to READY?
-                this->READY.push_back(*bg);
-            }
+    std::vector<Event> thingsHappening = nextEvents();
+    if (thingsHappening.empty()) {
+        // no next events - need to finish current running process?
+        if (RUNNING) {
+            unsigned int deltaT = RUNNING->burstTimeLeft();
+            RUNNING->doWork(deltaT);
+            // switch out to finish
+            contextSwitch();
         }
+        return flase;
+    } else {
+        fastForward(thingsHappening[0].timeToEvent);
+        return true;
     }
-
-    // try to add new processes to queues
-    std::vector<Process>::iterator proc = this->ARRIVAL.begin();
-    while(proc->getArrival() == this->simulation_timer) {
-        // add to READY? RUNNING?
-        if (this->isPreemptive) {
-            // handle preemption?
-        } else {
-            // add to READY?
-            this->READY.push_back(*proc);
-        }
-    }
-
-    // end of timeslice/preemption?
-
-    /*
-    // increment wait times
-	std::vector<Process>::iterator waiting = READY.begin();
-	std::vector<Process>::iterator ed = READY.end();
-    while (waiting != ed) {
-        ++waiting.wait_time;
-        ++waiting;
-    }
-    */
-
 }
 		
 unsigned long Scheduler::getTimer(){

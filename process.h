@@ -48,7 +48,7 @@ class Process {
         bool doWork(unsigned int deltaT);
         bool doIO(unsigned int deltaT);
 		void recalculateTau(int burstTime);
+        bool advanceArrival(unsigned int deltaT);
 
-		
 };
 #endif

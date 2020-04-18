@@ -24,7 +24,8 @@ class Scheduler {
         unsigned int numCS;
         unsigned int tcs;
         unsigned int nextCS; // for detecting next of context switch event
-        bool switching;
+        bool switchIN;
+        bool switchOUT;
 
         bool isPreemptive;
         unsigned int preemptions;
@@ -45,8 +46,11 @@ class Scheduler {
 	
         void contextSwitch(Process toIO, Process toCPU);
         void processArrival(Process newProcess);
-        unsigned int timeToNextEvent();
+        void storeEventIfSooner(std::vector<Event> & events
+                , unsigned int time, enum eventType type);
+        unsigned int nextEvent();
         void advance();
+        void fastForward(deltaT) {
 		unsigned long getTimer();
 		
 };
