@@ -41,7 +41,7 @@ class Process {
 		unsigned int getNumBursts();
 		float getTau();
 		
-		
+
         State setState(State newstate);
         unsigned int burstTimeLeft();
         unsigned int ioTimeLeft();
@@ -49,6 +49,7 @@ class Process {
         bool doIO(unsigned int deltaT);
 		void recalculateTau(int burstTime);
         bool advanceArrival(unsigned int deltaT);
+		void setTau(bool useTau);
 
 };
 #endif

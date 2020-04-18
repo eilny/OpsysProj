@@ -108,3 +108,8 @@ bool Process::advanceArrival(unsigned int deltaT) {
     }
     return false;
 }
+
+void Process::setTau(bool useTau){
+	if(useTau) return;
+	tau = 0;
+}

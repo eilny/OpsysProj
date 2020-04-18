@@ -6,9 +6,6 @@
 #include "scheduler.h"
 
 
-//For picking print statements
-enum PrintState {ARRIVE, START, COMPLETED, BLOCK, IOCOMPLETED, TAU, TERMINATED, TIMESLICE, ERROR};
-
 
 bool sortByArrvial(Process a, Process b){
     if(a.getArrival() == b.getArrival()){
@@ -19,6 +16,24 @@ bool sortByArrvial(Process a, Process b){
 }
 
 //Print Simulation Queue
+// void printSimQ(std::vector<Process> *queue){
+    // printf("[Q");
+    // if(queue.empty()){
+        // printf(" <empty>]\n");
+        // return;
+    // }
+    // std::vector<Process>::iterator bg = queue.begin();
+    // std::vector<Process>::iterator ed = queue.end();
+
+    // while(bg != ed){
+        // Process p = *bg;
+        // printf(" %c", p.getId());
+        // bg++;
+    // }
+    // printf("]\n");
+	// fflush(stdout);
+
+// }
 void printSimQ(std::vector<Process> *queue){
     printf("[Q");
     if(queue->empty()){
@@ -34,6 +49,7 @@ void printSimQ(std::vector<Process> *queue){
         bg++;
     }
     printf("]\n");
+	fflush(stdout);
 
 }
 
@@ -59,7 +75,7 @@ void printProcessState(PrintState p, int time, Process cur){
     }
     if(p == IOCOMPLETED){
         if(0 != cur.getTau()){
-            printf("time %dms: Process %c (tau %.0fms) completed I/O; added to ready queue ", time, cur.getId(), cur.getTau());
+            printf("time %dms: Process %c (tau %.0fms) completed I/O; ", time, cur.getId(), cur.getTau());
         }else{
             printf("time %dms: Process %c completed I/O; added to ready queue ", time, cur.getId());
         }
@@ -73,8 +89,26 @@ void printProcessState(PrintState p, int time, Process cur){
 	if(p == TIMESLICE){
 		printf("time %dms: Time slice expired; ", time);
 	}
+	if(p == PREEMPT){
+		printf("time %dms: ", time);
+	}
     fflush(stdout);
 }
+
+void printPreemptState(std::vector<Process> *queue, Process cur, PrintState pState){
+	if(pState == TIMESLICE){
+		if(queue->empty()){
+			printf(" no preemption because ready queue is empty ");
+		}else{
+			printf(" process %c preempted with %dms to go ", cur.getId(), cur.burstTimeLeft());
+		}
+	}
+	if(pState == PREEMPT){
+		printf("Process %d (tau %.0fms) will preempt %c ", (queue->front()).getId(), (queue->front()).getTau(), cur.getId());
+	}
+	
+}
+
 
 PrintState getPrintState(eventType evnt){
 	if(evnt == burstDone) return COMPLETED;
@@ -88,6 +122,13 @@ PrintState getPrintState(eventType evnt){
 		return ERROR;
 	}
 	
+}
+
+void setTauForAll(std::vector<Process> *queue, bool isUsingTau){
+	if(isUsingTau) return;
+	for( unsigned int i = 0; i < queue->size(); ++i){
+		(*queue)[i].setTau(isUsingTau);		
+	}	
 }
 
 
@@ -122,28 +163,35 @@ Scheduler::Scheduler(std::vector<Process> *processList,
 
 //Sets the Algorithm states 
 void Scheduler::setAlgorithm(std::string algo){
+	bool useTau = true;
 	if(algo == "FCFS"){
 		isPreemptive = false;
 		hasTimeSlice = false;
+		useTau = false;
 	}
 	else if(algo == "SJF"){
 		isPreemptive = false;
 		hasTimeSlice = false;
+		
+		useTau = true;
 	}
 	else if(algo == "SRT"){
 		isPreemptive = true;
 		hasTimeSlice = false;
+		useTau = true;
 	}
 	else if(algo == "RR"){
 		isPreemptive = true;
 		hasTimeSlice = true;
+		useTau = false;
 	}
 	else{
 		perror("Error: Invalid Algorithm\n");
 		return; 	
 	}
+	setTauForAll(&ARRIVAL, useTau);
 	printf("time %dms: Simulator started for %s ", 0, algo.c_str());
-	printSimQ(&(this->READY));
+	printSimQ((&READY));
 	
 }
 
@@ -162,7 +210,7 @@ void Scheduler::contextSwitch() {
         //              block on I/O until time (simulation_timer + process->I/O + tcs/2
         // PRINT HERE: time 177ms: Recalculated tau = 103ms for process B [Q A]
         // PRINT HERE: time 4770ms: Process B terminated [Q <empty>]
-
+		
         this->BLOCKED.push_back(*this->RUNNING);
         RUNNING->contextSwitch(false);
         // advance timer here
@@ -190,6 +238,9 @@ void Scheduler::contextSwitch() {
         std::vector<Process>::iterator arrend = this->ARRIVAL.end();
         while (arr != arrend) {
             if (arr->advanceArrival(tcs/2)) {
+				// pState = ARRIVE;
+				// printProcessState(pState, simulation_timer, *arr);
+				// printSimQ(&READY);
                 // process arrives, add to READY
                 // PRINT HERE: time 18ms: Process B (tau 100ms) arrived; added to ready queue [Q B]
                 READY.push_back(*arr);
@@ -209,7 +260,6 @@ void Scheduler::contextSwitch() {
         // advance timer here
         simulation_timer += tcs/2;
         // PRINT HERE: time 160ms: Process B (tau 100ms) started using the CPU with 85ms burst remaining [Q <empty>]
-
         // also advance io
         std::vector<Process>::iterator iobegin = BLOCKED.begin();
         std::vector<Process>::iterator ioend = BLOCKED.end();
@@ -229,6 +279,9 @@ void Scheduler::contextSwitch() {
         while (arr != arrend) {
             if (arr->advanceArrival(tcs/2)) {
                 // process arrives, add to READY
+				// pState = ARRIVE;
+				// printProcessState(pState, simulation_timer, *arr);
+				// printSimQ(&READY);
                 // PRINT HERE: time 18ms: Process B (tau 100ms) arrived; added to ready queue [Q B]
                 READY.push_back(*arr);
                 arr = ARRIVAL.erase(arr);
@@ -362,6 +415,9 @@ void Scheduler::fastForward(unsigned int deltaT) {
     while (arr != arrend) {
         if (arr->advanceArrival(deltaT)) {
             // process arrives, add to READY
+			// pState = ARRIVE;
+			// printProcessState(pState, simulation_timer, *arr);
+			// printSimQ(&READY);
             // PRINT HERE: time 18ms: Process B (tau 100ms) arrived; added to ready queue [Q B]
             READY.push_back(*arr);
             arr = ARRIVAL.erase(arr);
@@ -376,9 +432,6 @@ void Scheduler::fastForward(unsigned int deltaT) {
 bool Scheduler::advance() {
     // return true if advanced onwards
     // return false if finished
-    if (simulation_timer == 0) {
-        // PRINT HERE: time 0ms: Simulator started for SJF [Q <empty>]
-    }
 
     // advance to next event
     std::vector<Event> thingsHappening = nextEvents();
@@ -389,13 +442,9 @@ bool Scheduler::advance() {
             RUNNING->doWork(deltaT);
             // switch out to finish
             contextSwitch();
-            // PRINT HERE: time 4772ms: Simulator ended for FCFS [Q <empty>]
         }
         return false;
     } else {
-		//Printing statement 
-		
-		//printProcessState(
         fastForward(thingsHappening[0].timeToEvent);
         return true;
     }
@@ -413,6 +462,8 @@ void Scheduler::runSimulation(std::string algo){
 			printf("Advancing simulation in loop!\n");
 		#endif
 	}
+	printf("time %ldms: Simulator ended for %s ", this->simulation_timer, algo.c_str());
+	// printSimQ(&READY);
 }
 
 

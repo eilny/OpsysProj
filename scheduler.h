@@ -20,6 +20,10 @@ struct Event {
     eventType type;
 };
 
+//For picking print statements
+enum PrintState {ARRIVE, START, COMPLETED, BLOCK, IOCOMPLETED, TAU, TERMINATED, TIMESLICE, PREEMPT, ERROR};
+
+
 // parent class for scheduling algorithms
 class Scheduler {
     private:
@@ -52,6 +56,9 @@ class Scheduler {
         unsigned int remainingtimeslice; // for detecting end of timeslice
 		unsigned int rraddbgn;
 		
+		PrintState pState;
+		
+		
 		// bool sortByArrvial(Process a, Process b);
 
     public:
@@ -74,6 +81,7 @@ class Scheduler {
 		unsigned long getTimer();
 		
 		void runSimulation(std::string algo);
+		
 		
 };
 
