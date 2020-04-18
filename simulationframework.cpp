@@ -134,16 +134,20 @@ int main( int argc, char ** argv) {
 
 	//Test scheduler class construtor 
 	Scheduler *sch = new Scheduler(baseProcesses, tcs, timeslice, rraddbgn);
-	sch->advance();
-	printf("Scheduler: %lu\n", sch->getTimer());
+	sch->runSimulation();
+	// printf("Scheduler: %lu\n", sch->getTimer());
 	
 #endif
 
     /* Run simulations
     Scheduler FCFS(baseProcesses);
+	printArrivalList(baseProcesses, nproc);
     Scheduler SJF(baseProcesses);
+	printArrivalList(baseProcesses, nproc);
     Scheduler SRT(baseProcesses);
+	printArrivalList(baseProcesses, nproc);
     Scheduler RR(baseProcesses);
+	printArrivalList(baseProcesses, nproc);
 	
     FCFS.advance();
 	*/

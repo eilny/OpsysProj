@@ -146,7 +146,7 @@ void Scheduler::contextSwitch() {
             if (iobegin->doIO(tcs/2)) {
                 // return to READY
                this->READY.push_back(*iobegin);
-                BLOCKED.erase(iobegin);
+               iobegin = BLOCKED.erase(iobegin);
             }
             ++iobegin;
         }
@@ -157,7 +157,7 @@ void Scheduler::contextSwitch() {
             if (arr->advanceArrival(tcs/2)) {
                 // process arrives, add to READY
                 READY.push_back(*arr);
-                ARRIVAL.erase(arr);
+                arr = ARRIVAL.erase(arr);
             }
             ++arr;
         }
@@ -168,7 +168,8 @@ void Scheduler::contextSwitch() {
     if (!READY.empty()) {
         std::vector<Process>::iterator bg = READY.begin();
         bg->contextSwitch(true);
-        this->RUNNING = &(*this->READY.erase(bg));
+        this->RUNNING = &(*bg);
+		this->READY.erase(bg);
         // advance timer here
         simulation_timer += tcs/2;
         // also advance io
@@ -178,7 +179,7 @@ void Scheduler::contextSwitch() {
             if (iobegin->doIO(tcs/2)) {
                 // return to READY
                 READY.push_back(*iobegin);
-                BLOCKED.erase(iobegin);
+                iobegin = BLOCKED.erase(iobegin);
             }
             ++iobegin;
         }
@@ -189,7 +190,7 @@ void Scheduler::contextSwitch() {
             if (arr->advanceArrival(tcs/2)) {
                 // process arrives, add to READY
                 READY.push_back(*arr);
-                ARRIVAL.erase(arr);
+                arr = ARRIVAL.erase(arr);
             }
             ++arr;
         }
@@ -226,14 +227,14 @@ void Scheduler::storeEventIfSooner(std::vector<Event> & events
 
 std::vector<Event> Scheduler::nextEvents() {
 
-    std::vector<Event> nextEvents;
-    struct Event ne; //placeholder
+    std::vector<Event> nxtEvnts;
+    // struct Event ne; //placeholder
     enum eventType type;
 
     // check burst complete
     type = burstDone;
     if (!switchIN && !switchOUT && RUNNING) {
-        storeEventIfSooner(nextEvents, RUNNING->burstTimeLeft(), type);
+        storeEventIfSooner(nxtEvnts, RUNNING->burstTimeLeft(), type);
     }
 
     // check io complete
@@ -241,7 +242,7 @@ std::vector<Event> Scheduler::nextEvents() {
     std::vector<Process>::iterator iobegin = BLOCKED.begin();
     std::vector<Process>::iterator ioend = BLOCKED.end();
     while (iobegin != ioend) {
-        storeEventIfSooner(nextEvents, iobegin->ioTimeLeft(), type);
+        storeEventIfSooner(nxtEvnts, iobegin->ioTimeLeft(), type);
         ++iobegin;
     }
 
@@ -252,22 +253,22 @@ std::vector<Event> Scheduler::nextEvents() {
     while (arr != arrend) {
         // TODO: quit after arrival is no longer the same value?
         // that's mostly for efficiency, who cares atm
-        storeEventIfSooner(nextEvents, arr->getArrival(), type);
+        storeEventIfSooner(nxtEvnts, arr->getArrival(), type);
         ++arr;
     }
 
     // check timeslice if algo is timeslice based
     type = tslice;
     if (this->hasTimeSlice) {
-        storeEventIfSooner(nextEvents, remainingtimeslice, type);
+        storeEventIfSooner(nxtEvnts, remainingtimeslice, type);
     }
 
     // check switch out/switch in
     if (switchOUT || switchIN) {
-        storeEventIfSooner(nextEvents, nextCS, type);
+        storeEventIfSooner(nxtEvnts, nextCS, type);
     }
 
-    return nextEvents;
+    return nxtEvnts;
 }
 
 void Scheduler::fastForward(unsigned int deltaT) {
@@ -299,7 +300,7 @@ void Scheduler::fastForward(unsigned int deltaT) {
         if (iobegin->doIO(deltaT)) {
             // return to READY
             READY.push_back(*iobegin);
-            BLOCKED.erase(iobegin);
+            iobegin = BLOCKED.erase(iobegin);
         }
         ++iobegin;
     }
@@ -311,7 +312,7 @@ void Scheduler::fastForward(unsigned int deltaT) {
         if (arr->advanceArrival(deltaT)) {
             // process arrives, add to READY
             READY.push_back(*arr);
-            ARRIVAL.erase(arr);
+            arr = ARRIVAL.erase(arr);
         }
         ++arr;
     }
@@ -347,8 +348,10 @@ unsigned long Scheduler::getTimer(){
 }
 
 void Scheduler::runSimulation(){
-	while(!ARRIVAL.empty() || !READY.empty() || BLOCKED.empty() || RUNNING != NULL){
-		this->advance();
+	while(advance()){
+		#ifdef DEBUG_MODE
+			printf("Advancing simulation in loop!\n");
+		#endif
 	}
 }
 
