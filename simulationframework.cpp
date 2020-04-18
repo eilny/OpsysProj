@@ -135,7 +135,7 @@ int main( int argc, char ** argv) {
 	//Test scheduler class construtor 
 	Scheduler *sch = new Scheduler(baseProcesses, tcs, timeslice, rraddbgn);
 	sch->runSimulation("FCFS");
-	// printf("Scheduler: %lu\n", sch->getTimer());
+	printf("Scheduler: %lu\n", sch->getTimer());
 	
 #endif
 

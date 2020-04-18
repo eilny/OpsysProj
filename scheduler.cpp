@@ -43,7 +43,7 @@ void printSimQ(std::vector<Process> *queue){
 void printProcessState(PrintState p, int time, Process cur){
     if( p == ARRIVE ){
         if(0 != cur.getTau()){
-            printf("time %dms: Process %c (tau %.0fms) arrived; added to ready queue ", time, cur.getId(), tau);
+            printf("time %dms: Process %c (tau %.0fms) arrived; added to ready queue ", time, cur.getId(), cur.getTau());
         }else{
             printf("time %dms: Process %c arrived; added to ready queue ", time, cur.getId());
         }
@@ -71,7 +71,7 @@ void printProcessState(PrintState p, int time, Process cur){
         printf("time %dms: Process %c terminated ", time, cur.getId());
     }
 	if(p == TIMESLICE){
-		printf("time %dms: Time slice expired; ", time)
+		printf("time %dms: Time slice expired; ", time);
 	}
     fflush(stdout);
 }
