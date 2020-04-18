@@ -26,7 +26,8 @@ class Scheduler {
 
         std::vector<Process> READY;
         std::vector<Process> BLOCKED;
-        std::vector<Process>::iterator RUNNING;
+
+        Process* RUNNING;
 
         // simulation timer
         unsigned long simulation_timer = 0;
