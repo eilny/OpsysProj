@@ -73,7 +73,7 @@ class Scheduler {
         void fastForward(unsigned int deltaT);
 		unsigned long getTimer();
 		
-		void runSimulation();
+		void runSimulation(std::string algo);
 		
 };
 

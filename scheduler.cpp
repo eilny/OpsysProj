@@ -7,7 +7,7 @@
 
 
 //For picking print statements
-enum PrintState {ARRIVE, START, COMPLETED, BLOCK, IOCOMPLETED, TAU, TERMINATED};
+enum PrintState {ARRIVE, START, COMPLETED, BLOCK, IOCOMPLETED, TAU, TERMINATED, TIMESLICE, ERROR};
 
 
 bool sortByArrvial(Process a, Process b){
@@ -40,9 +40,9 @@ void printSimQ(std::vector<Process> *queue){
 
 // Printing statements 
 // Needs to be modified for process class
-void printProcessState(PrintState p, int time, Process cur, float tau){
+void printProcessState(PrintState p, int time, Process cur){
     if( p == ARRIVE ){
-        if(0 != tau){
+        if(0 != cur.getTau()){
             printf("time %dms: Process %c (tau %.0fms) arrived; added to ready queue ", time, cur.getId(), tau);
         }else{
             printf("time %dms: Process %c arrived; added to ready queue ", time, cur.getId());
@@ -58,20 +58,38 @@ void printProcessState(PrintState p, int time, Process cur, float tau){
         // printf("time %dms: Process %c switching out of CPU; will block on I/O until time %dms", time, cur.getId(), time+cur.getIo());
     }
     if(p == IOCOMPLETED){
-        if(0 != tau){
-            printf("time %dms: Process %c (tau %.0fms) completed I/O; added to ready queue ", time, cur.getId(), tau);
+        if(0 != cur.getTau()){
+            printf("time %dms: Process %c (tau %.0fms) completed I/O; added to ready queue ", time, cur.getId(), cur.getTau());
         }else{
             printf("time %dms: Process %c completed I/O; added to ready queue ", time, cur.getId());
         }
     }
     if(p == TAU){
-        printf("time %dms: Recalculated tau = %.0fms for process %c ", time, tau, cur.getId());
+        printf("time %dms: Recalculated tau = %.0fms for process %c ", time, cur.getTau(), cur.getId());
     }
     if(p == TERMINATED){
         printf("time %dms: Process %c terminated ", time, cur.getId());
     }
+	if(p == TIMESLICE){
+		printf("time %dms: Time slice expired; ", time)
+	}
     fflush(stdout);
 }
+
+PrintState getPrintState(eventType evnt){
+	if(evnt == burstDone) return COMPLETED;
+    else if(evnt == ioDone) return IOCOMPLETED;
+    else if(evnt == arrival) return ARRIVE;
+    else if(evnt == tslice) return TIMESLICE;
+    // else if(evnt == switchOUT) 
+    // else if(evnt == switchIN)
+	else{
+		perror("ERROR: Not recognized state");
+		return ERROR;
+	}
+	
+}
+
 
 //////////////////////////////////Start of Class definitions//////////////////////////////////
 
@@ -107,21 +125,25 @@ void Scheduler::setAlgorithm(std::string algo){
 	if(algo == "FCFS"){
 		isPreemptive = false;
 		hasTimeSlice = false;
-		
 	}
-	if(algo == "SJF"){
+	else if(algo == "SJF"){
 		isPreemptive = false;
 		hasTimeSlice = false;
 	}
-	if(algo == "SRT"){
+	else if(algo == "SRT"){
 		isPreemptive = true;
 		hasTimeSlice = false;
 	}
-	if(algo == "RR"){
+	else if(algo == "RR"){
 		isPreemptive = true;
 		hasTimeSlice = true;
-	
 	}
+	else{
+		perror("Error: Invalid Algorithm\n");
+		return; 	
+	}
+	printf("time %dms: Simulator started for %s ", 0, algo.c_str());
+	printSimQ(&(this->READY));
 	
 }
 
@@ -337,6 +359,9 @@ bool Scheduler::advance() {
         }
         return false;
     } else {
+		//Printing statement 
+		
+		//printProcessState(
         fastForward(thingsHappening[0].timeToEvent);
         return true;
     }
@@ -347,7 +372,8 @@ unsigned long Scheduler::getTimer(){
 
 }
 
-void Scheduler::runSimulation(){
+void Scheduler::runSimulation(std::string algo){
+	this->setAlgorithm(algo);
 	while(advance()){
 		#ifdef DEBUG_MODE
 			printf("Advancing simulation in loop!\n");
