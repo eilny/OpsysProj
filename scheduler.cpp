@@ -3,6 +3,7 @@
 #include <vector>
 #include <algorithm> 
 #include <string>
+
 #include "scheduler.h"
 
 
@@ -195,101 +196,142 @@ void Scheduler::setAlgorithm(std::string algo){
 	
 }
 
+void Scheduler::switchOUT() {
+    if (RUNNING->burstTimeLeft() == 0) {
+        // finished, move to I/O or terminated
+        RUNNING->finishedCPUBurst();
+        // PRINT HERE: time 67ms: Process A (tau 100ms) completed a CPU burst; 15 bursts to go [Q B]
+
+        if (RUNNING->getNumBurstsLeft()) {
+            // more bursts, not complete yet
+            if (sortsByTime) {
+                // recalculate tau before switching to i/o
+                RUNNING->recalculateTau(RUNNING->burstTimeLeft());
+                // PRINT HERE: time 177ms: Recalculated tau = 103ms for process B [Q A]
+            }
+
+            // PRINT HERE: time 156ms: Process A switching out of CPU; will block on I/O until time 311ms [Q B]
+            //              block on I/O until time (simulation_timer + process->I/O + tcs/2
+            RUNNING->contextSwitch(false);
+            RUNNING->setState(BLK);
+            BLOCKED.push_back(*RUNNING);
+
+        } else {
+            // no more bursts, terminate process
+            // PRINT HERE: time 4770ms: Process B terminated [Q <empty>]
+            RUNNING->setState(CMP);
+            COMPLETE->push_back(*RUNNING);
+        }
+        RUNNING = NULL;
+        return;
+
+    } else {
+        // not finished, timeslice or preemption
+        if (hasTimeSlice) {
+            // check timeslice end
+            if (remainingtimeslice) {
+                // not end of timeslice
+            } else {
+                if (READY.empty()) {
+                    // don't bother switching out
+                    // PRINT HERE: time 585ms: Time slice expired; no preemption because ready queue is empty [Q <empty>]
+                    return;
+                } else {
+                    // do the preemption part
+                    // preempt and put back on ready queue
+                    ++preemptions;
+                    // PRINT HERE: time 465ms: Time slice expired; process B preempted with 70ms to go [Q A]
+                    RUNNING->contextSwitch(false);
+                    RUNNING->setState(RDY);
+                    READY.push_back(*RUNNING);
+                    RUNNING = NULL;
+                    return;
+                }
+            }
+        }
+        if (isPreemptive) {
+            // not finished and not empty READY timeslice, process has been preempted
+            // preempt and put back on ready queue
+            ++preemptions;
+            RUNNING->contextSwitch(false);
+            RUNNING->setState(RDY);
+            READY.push_back(*RUNNING);
+            RUNNING = NULL;
+            return;
+        }
+    }
+}
+
+void Scheduler::switchIN() {
+    // PRINT HERE: time 160ms: Process B (tau 100ms) started using the CPU with 85ms burst remaining [Q <empty>]
+    RUNNING = *READY.begin();
+    RUNNING->setState(RUN);
+    RUNNING->contextSwitch(true);
+    READY.erase(READY.begin());
+}
+
+void Scheduler::contextSwitchTime(bool switchIN) {
+    // advance timer here
+    simulation_timer += tcs/2;
+
+    if (switchIN) {
+        // PRINT HERE: time 405ms: Process A (tau 54ms) will preempt B [Q A]
+    }
+
+    // also advance io
+    std::vector<Process>::iterator iobegin = BLOCKED.begin();
+    std::vector<Process>::iterator ioend = BLOCKED.end();
+    while (iobegin != ioend) {
+        for (unsigned int i = 0; i < tcs/2; ++i) {
+            // jump by 1 ms until we hit half of context switch time
+            if (iobegin->doIO(1)) {
+                // return to READY
+                // PRINT HERE: time 92ms: Process A (tau 78ms) completed I/O; preempting B [Q A]
+                // PRINT HERE: time 4556ms: Process B (tau 121ms) completed I/O; added to ready queue [Q B]
+                this->READY.push_back(*iobegin);
+                iobegin = BLOCKED.erase(iobegin);
+            }
+        }
+        ++iobegin;
+    }
+
+    // also advance arrivals
+    std::vector<Process>::iterator arr = this->ARRIVAL.begin();
+    std::vector<Process>::iterator arrend = this->ARRIVAL.end();
+    while (arr != arrend) {
+        for(unsigned int i = 0; i < tcs/2; ++i) {
+            if (arr->advanceArrival(1)) {
+                // process arrives, add to READY
+				// pState = ARRIVE;
+				// printProcessState(pState, simulation_timer, *arr);
+				// printSimQ(&READY);
+                // PRINT HERE: time 18ms: Process B (tau 100ms) arrived; added to ready queue [Q B]
+                READY.push_back(*arr);
+                arr = ARRIVAL.erase(arr);
+            }
+        }
+        ++arr;
+    }
+}
 
 
 
 void Scheduler::contextSwitch() {
+    ++numCS;
     // do a context switch
     //  move toIO from cpu (RUNNING) to io (BLOCKED)
     //  move toCPU from queue (READY) to cpu (RUNNING)
 
     // SWITCH OUT
     if (RUNNING) {
-        // PRINT HERE: time 67ms: Process A (tau 100ms) completed a CPU burst; 15 bursts to go [Q B]
-        // PRINT HERE: time 156ms: Process A switching out of CPU; will block on I/O until time 311ms [Q B]
-        //              block on I/O until time (simulation_timer + process->I/O + tcs/2
-        // PRINT HERE: time 177ms: Recalculated tau = 103ms for process B [Q A]
-        // PRINT HERE: time 4770ms: Process B terminated [Q <empty>]
-		
-        this->BLOCKED.push_back(*this->RUNNING);
-        RUNNING->contextSwitch(false);
-        // advance timer here
-        simulation_timer += tcs/2;
-
-        // also advance io
-        std::vector<Process>::iterator iobegin = BLOCKED.begin();
-        std::vector<Process>::iterator ioend = BLOCKED.end();
-        while (iobegin != ioend) {
-            // could skip ahead by a couple ms here - need to fix
-            // i.e. time is 100, arrival at 101, tcs/2 finish at 102, this will catch 102 but not 101 arrivals
-            // reformat this section to call fastForward, but without context switching?
-            // also need to avoid timeslices, etc.
-            if (iobegin->doIO(tcs/2)) {
-                // return to READY
-                // PRINT HERE: time 92ms: Process A (tau 78ms) completed I/O; preempting B [Q A]
-                // PRINT HERE: time 4556ms: Process B (tau 121ms) completed I/O; added to ready queue [Q B]
-               this->READY.push_back(*iobegin);
-               iobegin = BLOCKED.erase(iobegin);
-            }
-            ++iobegin;
-        }
-        // also advance arrivals
-        std::vector<Process>::iterator arr = this->ARRIVAL.begin();
-        std::vector<Process>::iterator arrend = this->ARRIVAL.end();
-        while (arr != arrend) {
-            if (arr->advanceArrival(tcs/2)) {
-				// pState = ARRIVE;
-				// printProcessState(pState, simulation_timer, *arr);
-				// printSimQ(&READY);
-                // process arrives, add to READY
-                // PRINT HERE: time 18ms: Process B (tau 100ms) arrived; added to ready queue [Q B]
-                READY.push_back(*arr);
-                arr = ARRIVAL.erase(arr);
-            }
-            ++arr;
-        }
+        switchOUT();
+        contextSwitchTime(false);
     }
-
 
     // SWITCH IN
     if (!READY.empty()) {
-        std::vector<Process>::iterator bg = READY.begin();
-        bg->contextSwitch(true);
-        this->RUNNING = &(*bg);
-		this->READY.erase(bg);
-        // advance timer here
-        simulation_timer += tcs/2;
-        // PRINT HERE: time 160ms: Process B (tau 100ms) started using the CPU with 85ms burst remaining [Q <empty>]
-        // also advance io
-        std::vector<Process>::iterator iobegin = BLOCKED.begin();
-        std::vector<Process>::iterator ioend = BLOCKED.end();
-        while (iobegin != ioend) {
-            if (iobegin->doIO(tcs/2)) {
-                // return to READY
-                // PRINT HERE: time 92ms: Process A (tau 78ms) completed I/O; preempting B [Q A]
-                // PRINT HERE: time 4556ms: Process B (tau 121ms) completed I/O; added to ready queue [Q B]
-                READY.push_back(*iobegin);
-                iobegin = BLOCKED.erase(iobegin);
-            }
-            ++iobegin;
-        }
-        // also advance arrivals
-        std::vector<Process>::iterator arr = this->ARRIVAL.begin();
-        std::vector<Process>::iterator arrend = this->ARRIVAL.end();
-        while (arr != arrend) {
-            if (arr->advanceArrival(tcs/2)) {
-                // process arrives, add to READY
-				// pState = ARRIVE;
-				// printProcessState(pState, simulation_timer, *arr);
-				// printSimQ(&READY);
-                // PRINT HERE: time 18ms: Process B (tau 100ms) arrived; added to ready queue [Q B]
-                READY.push_back(*arr);
-                arr = ARRIVAL.erase(arr);
-            }
-            ++arr;
-        }
-        // if SRT and process arrives/completes I/O with lower tau than the process being switched in
-        // PRINT HERE: time 405ms: Process A (tau 54ms) will preempt B [Q A]
+        switchOUT();
+        contextSwitchTime(true);
     }
 
     if (hasTimeSlice) {
@@ -370,7 +412,7 @@ std::vector<Event> Scheduler::nextEvents() {
 void Scheduler::fastForward(unsigned int deltaT) {
     // simulation moves forward
     simulation_timer += deltaT;
-    if (remainingtimeslice) {
+    if (hasTimeSlice) {
         // if timeslice based, less time in slice left
         remainingtimeslice -= deltaT;
         if (0 == remainingtimeslice) {
@@ -433,6 +475,10 @@ bool Scheduler::advance() {
     // return true if advanced onwards
     // return false if finished
 
+    if (simulation_timer == 0) {
+        // PRINT HERE: time 0ms: Simulator started for SJF [Q <empty>]
+    }
+
     // advance to next event
     std::vector<Event> thingsHappening = nextEvents();
     if (thingsHappening.empty()) {
@@ -444,7 +490,10 @@ bool Scheduler::advance() {
             contextSwitch();
         }
         return false;
-    } else {
+    } else { // things are happening, so go do them
+		//Printing statement 
+		
+		//printProcessState(
         fastForward(thingsHappening[0].timeToEvent);
         return true;
     }

@@ -1,7 +1,8 @@
 #include <vector>
 #include <queue>
 #include <string>
-#include "Process.h"
+
+#include "process.h"
 
 #ifndef _H_SCHEDULER_H_
 #define _H_SCHEDULER_H_
@@ -28,9 +29,9 @@ enum PrintState {ARRIVE, START, COMPLETED, BLOCK, IOCOMPLETED, TAU, TERMINATED, 
 class Scheduler {
     private:
         std::vector<Process> ARRIVAL;
-
         std::vector<Process> READY;
         std::vector<Process> BLOCKED;
+        std::vector<Process> COMPLETE;
 
         Process* RUNNING;
 
@@ -55,6 +56,8 @@ class Scheduler {
         unsigned int timeslice;
         unsigned int remainingtimeslice; // for detecting end of timeslice
 		unsigned int rraddbgn;
+
+        bool sortsByTime;
 		
 		PrintState pState;
 		

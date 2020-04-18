@@ -9,15 +9,22 @@ Process::Process( char pid, unsigned int arr
         , unsigned int nbursts, float lambda, float alp)
     : process_ID(pid)
     , arrival_time(arr)
-    , num_bursts(nbursts)
 	, alpha(alp)
 {
     // initialize turnaround, wait, and burst/io queues
     this->turnaround_time = 0;
     this->wait_time = 0;
 	this->tau = 1/lambda;
+
     this->burst_times = new std::vector<unsigned int>;
     this->io_times = new std::vector<unsigned int>;
+    this->pristine_burst_times = new std::vector<unsigned int>;
+    this->pristine_io_times = new std::vector<unsigned int>;
+
+    pristine_burst_times->reserve(nbursts);
+    burst_times->reserve(nbursts);
+    pristine_io_times->reserve(nbursts-1);
+    pristine_io_times->reserve(nbursts-1);
 }
 
 Process::~Process() {
@@ -27,6 +34,12 @@ Process::~Process() {
 	}
 	if(this->io_times != NULL){
 		delete this->io_times;
+	}
+	if(this->pristine_burst_times !=NULL){
+		delete this->pristine_burst_times;
+	}
+	if(this->pristine_io_times != NULL){
+		delete this->pristine_io_times;
 	}
 }
 
@@ -43,9 +56,11 @@ void Process::contextSwitch(bool switch_in) {
 }
 
 void Process::addBurst(unsigned int time){
+    pristine_burst_times->push_back(time);
 	this->burst_times->push_back(time);
 }
 void Process::addIo(unsigned int time){
+    pristine_io_times->push_back(time);
 	this->io_times->push_back(time);
 }
 char Process::getId(){
@@ -55,8 +70,17 @@ char Process::getId(){
 unsigned int Process::getArrival(){
 	return this->arrival_time;
 }
+
 unsigned int Process::getNumBursts(){
-	return this->num_bursts;
+	return pristine_burst_times->size();
+}
+
+unsigned int Process::getNumBurstsLeft() {
+    return burst_times->size();
+}
+
+unsigned int Process::getNumIOLeft() {
+    return io_times->size();
 }
 
 float Process::getTau(){
@@ -112,4 +136,12 @@ bool Process::advanceArrival(unsigned int deltaT) {
 void Process::setTau(bool useTau){
 	if(useTau) return;
 	tau = 0;
+}
+
+void Process::finishedCPUBurst() {
+    burst_times.erase(burst_times.begin());
+}
+
+void Process::finishedIOBlock() {
+    io_times.erase(io_times.begin());
 }
