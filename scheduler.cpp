@@ -17,37 +17,14 @@ bool sortByArrvial(Process a, Process b){
 }
 
 //Print Simulation Queue
-// void printSimQ(std::vector<Process> *queue){
-    // printf("[Q");
-    // if(queue.empty()){
-        // printf(" <empty>]\n");
-        // return;
-    // }
-    // std::vector<Process>::iterator bg = queue.begin();
-    // std::vector<Process>::iterator ed = queue.end();
-
-    // while(bg != ed){
-        // Process p = *bg;
-        // printf(" %c", p.getId());
-        // bg++;
-    // }
-    // printf("]\n");
-	// fflush(stdout);
-
-// }
 void printSimQ(std::vector<Process> *queue){
     printf("[Q");
     if(queue->empty()){
         printf(" <empty>]\n");
         return;
     }
-    std::vector<Process>::iterator bg = queue->begin();
-    std::vector<Process>::iterator ed = queue->end();
-
-    while(bg != ed){
-        Process p = *bg;
-        printf(" %c", p.getId());
-        bg++;
+    for(unsigned int i = 0; i < queue->size(); ++i){
+        printf(" %c", (*queue)[i].getId());
     }
     printf("]\n");
 	fflush(stdout);
@@ -57,35 +34,35 @@ void printSimQ(std::vector<Process> *queue){
 
 // Printing statements 
 // Needs to be modified for process class
-void printProcessState(PrintState p, int time, Process cur){
+void printProcessState(PrintState p, int time, Process *cur){
     if( p == ARRIVE ){
-        if(0 != cur.getTau()){
-            printf("time %dms: Process %c (tau %.0fms) arrived; added to ready queue ", time, cur.getId(), cur.getTau());
+        if(0 != cur->getTau()){
+            printf("time %dms: Process %c (tau %.0fms) arrived; added to ready queue ", time, cur->getId(), cur->getTau());
         }else{
-            printf("time %dms: Process %c arrived; added to ready queue ", time, cur.getId());
+            printf("time %dms: Process %c arrived; added to ready queue ", time, cur->getId());
         }
     }
     if(p == START){
-        // printf("time %dms: Process %c started using the CPU for %dms burst ", time, cur.getId(), cur.getBurst());
+        // printf("time %dms: Process %c started using the CPU for %dms burst ", time, cur->getId(), cur->burstTimeLeft());
     }
     if(p == COMPLETED){
-        // printf("time %dms: Process %c completed a CPU burst; %d bursts to go ", time, cur.getId(), cur.getRemainBurst());
+        // printf("time %dms: Process %c completed a CPU burst; %d bursts to go ", time, cur->getId(), cur->burstTimeLeft());
     }
     if(p == BLOCK){
-        // printf("time %dms: Process %c switching out of CPU; will block on I/O until time %dms", time, cur.getId(), time+cur.getIo());
+        // printf("time %dms: Process %c switching out of CPU; will block on I/O until time %dms", time, cur->getId(), time+cur->ioTimeLeft());
     }
     if(p == IOCOMPLETED){
-        if(0 != cur.getTau()){
-            printf("time %dms: Process %c (tau %.0fms) completed I/O; ", time, cur.getId(), cur.getTau());
+        if(0 != cur->getTau()){
+            printf("time %dms: Process %c (tau %.0fms) completed I/O; ", time, cur->getId(), cur->getTau());
         }else{
-            printf("time %dms: Process %c completed I/O; added to ready queue ", time, cur.getId());
+            printf("time %dms: Process %c completed I/O; added to ready queue ", time, cur->getId());
         }
     }
     if(p == TAU){
-        printf("time %dms: Recalculated tau = %.0fms for process %c ", time, cur.getTau(), cur.getId());
+        printf("time %dms: Recalculated tau = %.0fms for process %c ", time, cur->getTau(), cur->getId());
     }
     if(p == TERMINATED){
-        printf("time %dms: Process %c terminated ", time, cur.getId());
+        printf("time %dms: Process %c terminated ", time, cur->getId());
     }
 	if(p == TIMESLICE){
 		printf("time %dms: Time slice expired; ", time);
@@ -96,16 +73,16 @@ void printProcessState(PrintState p, int time, Process cur){
     fflush(stdout);
 }
 
-void printPreemptState(std::vector<Process> *queue, Process cur, PrintState pState){
+void printPreemptState(std::vector<Process> *queue, Process* cur, PrintState pState){
 	if(pState == TIMESLICE){
 		if(queue->empty()){
 			printf(" no preemption because ready queue is empty ");
 		}else{
-			printf(" process %c preempted with %dms to go ", cur.getId(), cur.burstTimeLeft());
+			printf(" process %c preempted with %dms to go ", cur->getId(), cur->burstTimeLeft());
 		}
 	}
 	if(pState == PREEMPT){
-		printf("Process %d (tau %.0fms) will preempt %c ", (queue->front()).getId(), (queue->front()).getTau(), cur.getId());
+		printf("Process %d (tau %.0fms) will preempt %c ", (queue->front()).getId(), (queue->front()).getTau(), cur->getId());
 	}
 	
 }
@@ -457,9 +434,9 @@ void Scheduler::fastForward(unsigned int deltaT) {
     while (arr != arrend) {
         if (arr->advanceArrival(deltaT)) {
             // process arrives, add to READY
-			// pState = ARRIVE;
-			// printProcessState(pState, simulation_timer, *arr);
-			// printSimQ(&READY);
+			pState = ARRIVE;
+			printProcessState(pState, simulation_timer, &(*arr));
+			printSimQ(&READY);
             // PRINT HERE: time 18ms: Process B (tau 100ms) arrived; added to ready queue [Q B]
             READY.push_back(*arr);
             arr = ARRIVAL.erase(arr);
@@ -512,7 +489,7 @@ void Scheduler::runSimulation(std::string algo){
 		#endif
 	}
 	printf("time %ldms: Simulator ended for %s ", this->simulation_timer, algo.c_str());
-	// printSimQ(&READY);
+	printSimQ(&READY);
 }
 
 
