@@ -116,7 +116,7 @@ void Scheduler::contextSwitch() {
         this->BLOCKED.push_back(*this->RUNNING);
         RUNNING->contextSwitch(false);
         // advance timer here
-        simulationtimer += tcs/2;
+        simulation_timer += tcs/2;
         // also advance io
         std::vector<Process>::iterator iobegin = BLOCKED.begin();
         std::vector<Process>::iterator ioend = BLOCKED.end();
@@ -148,7 +148,7 @@ void Scheduler::contextSwitch() {
         bg->contextSwitch(true);
         this->RUNNING = *this->READY.erase(bg);
         // advance timer here
-        simulationtimer += tcs/2;
+        simulation_timer += tcs/2;
         // also advance io
         std::vector<Process>::iterator iobegin = BLOCKED.begin();
         std::vector<Process>::iterator ioend = BLOCKED.end();
