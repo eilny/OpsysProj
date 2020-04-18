@@ -5,6 +5,20 @@
 #ifndef _H_SCHEDULER_H_
 #define _H_SCHEDULER_H_
 
+enum eventType {
+    burstDone
+    , ioDone
+    , arrival
+    , timeslice
+    , switchOUT
+    , switchIN
+};
+
+struct Event {
+    unsigned int timeToEvent;
+    eventType type;
+};
+
 // parent class for scheduling algorithms
 class Scheduler {
     private:
@@ -44,13 +58,13 @@ class Scheduler {
 			unsigned int tmslice, 
 			unsigned int rr);
 	
-        void contextSwitch(Process toIO, Process toCPU);
+        void contextSwitch();
         void processArrival(Process newProcess);
         void storeEventIfSooner(std::vector<Event> & events
                 , unsigned int time, enum eventType type);
         unsigned int nextEvent();
         void advance();
-        void fastForward(deltaT) {
+        void fastForward(unsigned int deltaT) {
 		unsigned long getTimer();
 		
 };

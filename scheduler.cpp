@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <vector>
 #include <algorithm> 
+
 #include "scheduler.h"
 
 
@@ -10,93 +11,93 @@ enum PrintState {ARRIVE, START, COMPLETED, BLOCK, IOCOMPLETED, TAU, TERMINATED};
 
 
 bool sortByArrvial(Process a, Process b){
-	if(a.getArrival() == b.getArrival()){
-		return (a.getId() < b.getId());
-	}
-	return (a.getArrival() < b.getArrival());
-	
+    if(a.getArrival() == b.getArrival()){
+        return (a.getId() < b.getId());
+    }
+    return (a.getArrival() < b.getArrival());
+
 }
 
 //Print Simulation Queue
 void printSimQ(std::vector<Process> *queue){
-	printf("[Q");
-	if(queue->empty()){
-		printf(" <empty>]\n");
-		return;
-	}
-	std::vector<Process>::iterator bg = queue->begin();
-	std::vector<Process>::iterator ed = queue->end();
-	
-	while(bg != ed){
-		Process p = *bg;
-		printf(" %c", p.getId());
-		bg++;
-	}
-	printf("]\n");
-	
+    printf("[Q");
+    if(queue->empty()){
+        printf(" <empty>]\n");
+        return;
+    }
+    std::vector<Process>::iterator bg = queue->begin();
+    std::vector<Process>::iterator ed = queue->end();
+
+    while(bg != ed){
+        Process p = *bg;
+        printf(" %c", p.getId());
+        bg++;
+    }
+    printf("]\n");
+
 }
 
 
 // Printing statements 
 // Needs to be modified for process class
 void printProcessState(PrintState p, int time, Process cur, float tau){
-	if( p == ARRIVE ){
-		if(0 != tau){
-			printf("time %dms: Process %c (tau %.0fms) arrived; added to ready queue ", time, cur.getId(), tau);
-		}else{
-			printf("time %dms: Process %c arrived; added to ready queue ", time, cur.getId());
-		}
-	}
-	if(p == START){
-		// printf("time %dms: Process %c started using the CPU for %dms burst ", time, cur.getId(), cur.getBurst());
-	}
-	if(p == COMPLETED){
-		// printf("time %dms: Process %c completed a CPU burst; %d bursts to go ", time, cur.getId(), cur.getRemainBurst());
-	}
-	if(p == BLOCK){
-		// printf("time %dms: Process %c switching out of CPU; will block on I/O until time %dms", time, cur.getId(), time+cur.getIo());
-	}
-	if(p == IOCOMPLETED){
-		if(0 != tau){
-			printf("time %dms: Process %c (tau %.0fms) completed I/O; added to ready queue ", time, cur.getId(), tau);
-		}else{
-			printf("time %dms: Process %c completed I/O; added to ready queue ", time, cur.getId());
-		}
-	}
-	if(p == TAU){
-		printf("time %dms: Recalculated tau = %.0fms for process %c ", time, tau, cur.getId());
-	}
-	if(p == TERMINATED){
-		printf("time %dms: Process %c terminated ", time, cur.getId());
-	}
-	fflush(stdout);
+    if( p == ARRIVE ){
+        if(0 != tau){
+            printf("time %dms: Process %c (tau %.0fms) arrived; added to ready queue ", time, cur.getId(), tau);
+        }else{
+            printf("time %dms: Process %c arrived; added to ready queue ", time, cur.getId());
+        }
+    }
+    if(p == START){
+        // printf("time %dms: Process %c started using the CPU for %dms burst ", time, cur.getId(), cur.getBurst());
+    }
+    if(p == COMPLETED){
+        // printf("time %dms: Process %c completed a CPU burst; %d bursts to go ", time, cur.getId(), cur.getRemainBurst());
+    }
+    if(p == BLOCK){
+        // printf("time %dms: Process %c switching out of CPU; will block on I/O until time %dms", time, cur.getId(), time+cur.getIo());
+    }
+    if(p == IOCOMPLETED){
+        if(0 != tau){
+            printf("time %dms: Process %c (tau %.0fms) completed I/O; added to ready queue ", time, cur.getId(), tau);
+        }else{
+            printf("time %dms: Process %c completed I/O; added to ready queue ", time, cur.getId());
+        }
+    }
+    if(p == TAU){
+        printf("time %dms: Recalculated tau = %.0fms for process %c ", time, tau, cur.getId());
+    }
+    if(p == TERMINATED){
+        printf("time %dms: Process %c terminated ", time, cur.getId());
+    }
+    fflush(stdout);
 }
 
 
 //Constructor
 Scheduler::Scheduler(std::vector<Process> *processList,
-			unsigned int tcontext,
-			unsigned int tmslice, 
-			unsigned int rr)
-		:	tcs(tcontext)
-		,	timeslice(tmslice)
-		,	rraddbgn(rr)
+        unsigned int tcontext,
+        unsigned int tmslice, 
+        unsigned int rr)
+    :	tcs(tcontext)
+    ,	timeslice(tmslice)
+        ,	rraddbgn(rr)
 {
-	avgwait = 0;
-	avgburst = 0;
-	avgturnaround = 0;
-	preemptions = 0;
-	remainingtimeslice = 0;
-	simulation_timer = 0;
-	numCS = 0;
-	nextCS = 0;
-	hasTimeSlice = false;
-	isPreemptive = false;
-	switchIN = false;
-	switchOUT = false;
-	
-	this->ARRIVAL = *processList;
-	std::sort (this->ARRIVAL.begin(), this->ARRIVAL.end(), sortByArrvial);
+    avgwait = 0;
+    avgburst = 0;
+    avgturnaround = 0;
+    preemptions = 0;
+    remainingtimeslice = 0;
+    simulation_timer = 0;
+    numCS = 0;
+    nextCS = 0;
+    hasTimeSlice = false;
+    isPreemptive = false;
+    switchIN = false;
+    switchOUT = false;
+
+    this->ARRIVAL = *processList;
+    std::sort (this->ARRIVAL.begin(), this->ARRIVAL.end(), sortByArrvial);
 
 }
 
@@ -105,27 +106,77 @@ Scheduler::Scheduler(std::vector<Process> *processList,
 
 
 
-void Scheduler::contextSwitch(Process toIO, Process toCPU) {
+void Scheduler::contextSwitch() {
     // do a context switch
     //  move toIO from cpu (RUNNING) to io (BLOCKED)
     //  move toCPU from queue (READY) to cpu (RUNNING)
 
-    // update timing? deal with context switch times
-    this->BLOCKED.push_back(*this->RUNNING);
-    // should call process contextSwitch here
-    State temp = BLK;
-    this->RUNNING->setState(temp);
+    // SWITCH OUT
+    if (RUNNING) {
+        this->BLOCKED.push_back(*this->RUNNING);
+        RUNNING->contextSwitch(false);
+        // advance timer here
+        simulationtimer += tcs/2;
+        // also advance io
+        std::vector<Process>::iterator iobegin = BLOCKED.begin();
+        std::vector<Process>::iterator ioend = BLOCKED.end();
+        while (iobegin != ioend) {
+            if (iobegin->doIO(tcs/2)) {
+                // return to READY
+                READY.push_back(iobegin);
+                BLOCKED.erase(iobegin);
+            }
+            ++iobegin;
+        }
+        // also advance arrivals
+        std::vector<Process>::iterator arr = this->ARRIVAL.begin();
+        std::vector<Process>::iterator arrend = this->ARRIVAL.end();
+        while (arr != arrend) {
+            if (arr->advanceArrival(tcs/2)) {
+                // process arrives, add to READY
+                READY.push_back(arr);
+                ARRIVAL.erase(arr);
+            }
+            ++arr;
+        }
+    }
 
-    std::vector<Process>::iterator bg = READY.begin();
-    this->RUNNING = this->READY.erase(bg);
 
-    // should call process contextSwitch here
-    temp = RUN;
-    this->RUNNING->setState(temp);
+    // SWITCH IN
+    if (!READY.empty()) {
+        std::vector<Process>::iterator bg = READY.begin();
+        bg->contextSwitch(true);
+        this->RUNNING = *this->READY.erase(bg);
+        // advance timer here
+        simulationtimer += tcs/2;
+        // also advance io
+        std::vector<Process>::iterator iobegin = BLOCKED.begin();
+        std::vector<Process>::iterator ioend = BLOCKED.end();
+        while (iobegin != ioend) {
+            if (iobegin->doIO(tcs/2)) {
+                // return to READY
+                READY.push_back(iobegin);
+                BLOCKED.erase(iobegin);
+            }
+            ++iobegin;
+        }
+        // also advance arrivals
+        std::vector<Process>::iterator arr = this->ARRIVAL.begin();
+        std::vector<Process>::iterator arrend = this->ARRIVAL.end();
+        while (arr != arrend) {
+            if (arr->advanceArrival(tcs/2)) {
+                // process arrives, add to READY
+                READY.push_back(arr);
+                ARRIVAL.erase(arr);
+            }
+            ++arr;
+        }
+    }
 
-    // TODO: fix in/out switch flags
-    switchIN = true;
-    switchOUT = true;
+    if (hasTimeSlice) {
+        remainingtimeslice = timeslice;
+    }
+
     return;
 }
 
@@ -135,20 +186,6 @@ void Scheduler::processArrival(Process newProcess) {
 
     return;
 }
-
-enum eventType {
-    burstDone
-    , ioDone
-    , arrival
-    , timeslice
-    , switchOUT
-    , switchIN
-};
-
-struct Event {
-    unsigned int timeToEvent;
-    eventType type;
-};
 
 void Scheduler::storeEventIfSooner(std::vector<Event> & events
         , unsigned int time, enum eventType type) {
@@ -211,7 +248,7 @@ std::vector<Event> Scheduler::nextEvents() {
     return nextEvents;
 }
 
-void Scheduler::fastForward(deltaT) {
+void Scheduler::fastForward(unsigned int deltaT) {
     // simulation moves forward
     simulation_timer += deltaT;
     if (remainingtimeslice) {
@@ -219,7 +256,9 @@ void Scheduler::fastForward(deltaT) {
         remainingtimeslice -= deltaT;
         if (0 == remainingtimeslice) {
             // timeslice done, context switch
-            // return to READY queue
+            contextSwitch();
+            // reset timeslice
+            remainingtimeslice = timeslice;
         }
     }
 
@@ -273,15 +312,14 @@ bool Scheduler::advance() {
             // switch out to finish
             contextSwitch();
         }
-        return flase;
+        return false;
     } else {
         fastForward(thingsHappening[0].timeToEvent);
         return true;
     }
 }
-		
+
 unsigned long Scheduler::getTimer(){
-	return this->simulation_timer;
-	
+    return this->simulation_timer;
 }
 

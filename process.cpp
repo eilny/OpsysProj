@@ -101,7 +101,7 @@ void Process::recalculateTau(int burstTime){
 	
 }
 
-bool advanceArrival(unsigned int deltaT) {
+bool Process::advanceArrival(unsigned int deltaT) {
     arrival_time -= deltaT;
     if (arrival_time == 0) {
         return true;
