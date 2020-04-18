@@ -10,7 +10,7 @@ enum eventType {
     burstDone
     , ioDone
     , arrival
-    , timeslice
+    , tslice
     , switchOUT
     , switchIN
 };

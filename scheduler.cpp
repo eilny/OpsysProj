@@ -226,7 +226,7 @@ void Scheduler::storeEventIfSooner(std::vector<Event> & events
 
 std::vector<Event> Scheduler::nextEvents() {
 
-    std::vector<unsigned int> nextEvents;
+    std::vector<Event> nextEvents;
     struct Event ne; //placeholder
     enum eventType type;
 
@@ -257,7 +257,7 @@ std::vector<Event> Scheduler::nextEvents() {
     }
 
     // check timeslice if algo is timeslice based
-    type = timeslice;
+    type = tslice;
     if (this->hasTimeSlice) {
         storeEventIfSooner(nextEvents, remainingtimeslice, type);
     }
