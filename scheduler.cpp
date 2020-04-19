@@ -46,7 +46,7 @@ void printProcessState(PrintState p, int time, Process *cur){
         printf("time %dms: Process %c started using the CPU for %dms burst ", time, cur->getId(), cur->burstTimeLeft());
     }
     if(p == COMPLETED){
-        printf("time %dms: Process %c completed a CPU burst; %d bursts to go ", time, cur->getId(), cur->burstTimeLeft());
+        printf("time %dms: Process %c completed a CPU burst; %d bursts to go ", time, cur->getId(), cur->getNumBurstsLeft());
     }
     if(p == BLOCK){
         printf("time %dms: Process %c switching out of CPU; will block on I/O until time %dms", time, cur->getId(), time+cur->ioTimeLeft());
@@ -168,6 +168,9 @@ void Scheduler::setAlgorithm(std::string algo){
 void Scheduler::switchOUT() {
     if (RUNNING->burstTimeLeft() == 0) {
         RUNNING->finishedCPUBurst();
+		pState = COMPLETED; 
+		printProcessState(pState , simulation_timer, RUNNING);
+		printSimQ(&READY);
         // PRINT HERE: time 67ms: Process A (tau 100ms) completed a CPU burst; 15 bursts to go [Q B]
 
         if (RUNNING->getNumBurstsLeft()) {
@@ -175,6 +178,9 @@ void Scheduler::switchOUT() {
             if (sortsByTime) {
                 // recalculate tau before switching to i/o
                 RUNNING->recalculateTau(RUNNING->burstTimeLeft());
+				pState = TAU;
+				printProcessState(pState, simulation_timer, RUNNING);
+				printSimQ(&READY);
                 // PRINT HERE: time 177ms: Recalculated tau = 103ms for process B [Q A]
             }
 
@@ -186,6 +192,9 @@ void Scheduler::switchOUT() {
 
         } else {
             // no more bursts, terminate process
+			pState = TERMINATED;
+			printProcessState(pState, simulation_timer, RUNNING);
+			printSimQ(&READY);
             // PRINT HERE: time 4770ms: Process B terminated [Q <empty>]
             RUNNING->setTurnAround(simulation_timer);
             RUNNING->setState(CMP);
@@ -201,14 +210,20 @@ void Scheduler::switchOUT() {
             if (remainingtimeslice) {
                 // not end of timeslice
             } else {
+				pState = TIMESLICE;
+				printProcessState(pState, simulation_timer, RUNNING);
                 if (READY.empty()) {
                     // don't bother switching out
+					printPreemptState(&READY, RUNNING, pState);
+					printSimQ(&READY);
                     // PRINT HERE: time 585ms: Time slice expired; no preemption because ready queue is empty [Q <empty>]
                     return;
                 } else {
                     // do the preemption part
                     // preempt and put back on ready queue
                     ++preemptions;
+					printPreemptState(&READY, RUNNING, pState);
+					printSimQ(&READY);
                     // PRINT HERE: time 465ms: Time slice expired; process B preempted with 70ms to go [Q A]
                     RUNNING->contextSwitch(false);
                     RUNNING->setState(RDY);
@@ -401,15 +416,15 @@ void Scheduler::fastForward(unsigned int deltaT) {
         remainingtimeslice -= deltaT;
         if (0 == remainingtimeslice) {
             // timeslice done, context switch
-			pSTATE = TIMESLICE;
+			pState = TIMESLICE;
 			printProcessState(pState, simulation_timer, RUNNING);
             if (READY.empty()) {
                 // no context switch
-				printPreemptState(&READY, RUNNING, pSTATE);
+				printPreemptState(&READY, RUNNING, pState);
 				printSimQ(&READY);
                 // PRINT HERE: time 4709ms: Time slice expired; no preemption because ready queue is empty [Q <empty>]
             } else {
-				printPreemptState(&READY, RUNNING, pSTATE);
+				printPreemptState(&READY, RUNNING, pState);
 				printSimQ(&READY);
                 // PRINT HERE: time 2908ms: Time slice expired; process B preempted with 6ms to go [Q A]
                 contextSwitch();
