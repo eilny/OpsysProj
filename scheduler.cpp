@@ -96,7 +96,7 @@ void printPreemptState(std::deque<Process> *queue, Process* cur, PrintState pSta
 		}
 	}
 	if(pState == PREEMPT){
-		printf("Process %d (tau %.0fms) will preempt %c ", (queue->front()).getId(), (queue->front()).getTau(), cur->getId());
+		printf("Process %c (tau %.0fms) will preempt %c ", (queue->front()).getId(), (queue->front()).getTau(), cur->getId());
 	}
 	if(pState == IOCOMPLETED){
 		if(queue->empty()){
@@ -277,7 +277,8 @@ bool Scheduler::switchIN() {
 	
     // PRINT HERE: time 160ms: Process B (tau 100ms) started using the CPU with 85ms burst remaining [Q <empty>]
     if (!RUNNING) {
-        RUNNING = &READY.front();
+
+        RUNNING = new Process(READY.front());
         RUNNING->setState(RUN);
         RUNNING->contextSwitch(true);
         READY.pop_front();
@@ -396,6 +397,7 @@ std::vector<Event> Scheduler::nextEvents() {
     // struct Event ne; //placeholder
     enum eventType type;
 
+
     // check burst complete
     type = burstDone;
     //if (!switchIN && !switchOUT && RUNNING) {
@@ -435,6 +437,7 @@ std::vector<Event> Scheduler::nextEvents() {
         storeEventIfSooner(nxtEvnts, nextCS, type);
     }
     */
+
     if (!RUNNING && !READY.empty()) {
         // check READY after I/O and ARRIVAL to context switch in
         storeEventIfSooner(nxtEvnts, 0, cswitch);
