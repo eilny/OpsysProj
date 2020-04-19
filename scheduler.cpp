@@ -131,8 +131,6 @@ Scheduler::Scheduler(std::vector<Process> *processList,
     nextCS = 0;
     hasTimeSlice = false;
     isPreemptive = false;
-    switchIN = false;
-    switchOUT = false;
 
     this->ARRIVAL = *processList;
     std::sort (this->ARRIVAL.begin(), this->ARRIVAL.end(), sortByArrvial);
@@ -175,7 +173,6 @@ void Scheduler::setAlgorithm(std::string algo){
 
 void Scheduler::switchOUT() {
     if (RUNNING->burstTimeLeft() == 0) {
-        // finished, move to I/O or terminated
         RUNNING->finishedCPUBurst();
         // PRINT HERE: time 67ms: Process A (tau 100ms) completed a CPU burst; 15 bursts to go [Q B]
 
@@ -197,7 +194,7 @@ void Scheduler::switchOUT() {
             // no more bursts, terminate process
             // PRINT HERE: time 4770ms: Process B terminated [Q <empty>]
             RUNNING->setState(CMP);
-            COMPLETE->push_back(*RUNNING);
+            COMPLETE.push_back(*RUNNING);
         }
         RUNNING = NULL;
         return;
@@ -241,7 +238,7 @@ void Scheduler::switchOUT() {
 
 void Scheduler::switchIN() {
     // PRINT HERE: time 160ms: Process B (tau 100ms) started using the CPU with 85ms burst remaining [Q <empty>]
-    RUNNING = *READY.begin();
+    *RUNNING = *READY.begin();
     RUNNING->setState(RUN);
     RUNNING->contextSwitch(true);
     READY.erase(READY.begin());
@@ -291,8 +288,6 @@ void Scheduler::contextSwitchTime(bool switchIN) {
     }
 }
 
-
-
 void Scheduler::contextSwitch() {
     ++numCS;
     // do a context switch
@@ -307,7 +302,7 @@ void Scheduler::contextSwitch() {
 
     // SWITCH IN
     if (!READY.empty()) {
-        switchOUT();
+        switchIN();
         contextSwitchTime(true);
     }
 
@@ -348,7 +343,8 @@ std::vector<Event> Scheduler::nextEvents() {
 
     // check burst complete
     type = burstDone;
-    if (!switchIN && !switchOUT && RUNNING) {
+    //if (!switchIN && !switchOUT && RUNNING) {
+    if (RUNNING) {
         storeEventIfSooner(nxtEvnts, RUNNING->burstTimeLeft(), type);
     }
 
@@ -378,10 +374,12 @@ std::vector<Event> Scheduler::nextEvents() {
         storeEventIfSooner(nxtEvnts, remainingtimeslice, type);
     }
 
+    /*
     // check switch out/switch in
     if (switchOUT || switchIN) {
         storeEventIfSooner(nxtEvnts, nextCS, type);
     }
+    */
 
     return nxtEvnts;
 }
@@ -451,10 +449,6 @@ void Scheduler::fastForward(unsigned int deltaT) {
 bool Scheduler::advance() {
     // return true if advanced onwards
     // return false if finished
-
-    if (simulation_timer == 0) {
-        // PRINT HERE: time 0ms: Simulator started for SJF [Q <empty>]
-    }
 
     // advance to next event
     std::vector<Event> thingsHappening = nextEvents();

@@ -139,9 +139,9 @@ void Process::setTau(bool useTau){
 }
 
 void Process::finishedCPUBurst() {
-    burst_times.erase(burst_times.begin());
+    burst_times->erase(burst_times->begin());
 }
 
 void Process::finishedIOBlock() {
-    io_times.erase(io_times.begin());
+    io_times->erase(io_times->begin());
 }

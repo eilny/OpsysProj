@@ -46,8 +46,6 @@ class Scheduler {
         unsigned int numCS;
         unsigned int tcs;
         unsigned int nextCS; // for detecting next of context switch event
-        bool switchIN;
-        bool switchOUT;
 
         bool isPreemptive;
         unsigned int preemptions;
@@ -61,7 +59,6 @@ class Scheduler {
 		
 		PrintState pState;
 		
-		
 		// bool sortByArrvial(Process a, Process b);
 
     public:
@@ -73,10 +70,12 @@ class Scheduler {
 		void setAlgorithm(std::string algo);
 	
 	
+        void switchOUT();
+        void switchIN();
+        void contextSwitchTime(bool switchIN);
         void contextSwitch();
         void processArrival(Process newProcess);
-        void storeEventIfSooner(std::vector<Event> & events
-                , unsigned int time, enum eventType type);
+        void storeEventIfSooner(std::vector<Event> & events, unsigned int time, enum eventType type);
         unsigned int nextEvent();
 		std::vector<Event> nextEvents();
         bool advance();
