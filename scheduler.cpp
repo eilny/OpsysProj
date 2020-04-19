@@ -43,13 +43,13 @@ void printProcessState(PrintState p, int time, Process *cur){
         }
     }
     if(p == START){
-        // printf("time %dms: Process %c started using the CPU for %dms burst ", time, cur->getId(), cur->burstTimeLeft());
+        printf("time %dms: Process %c started using the CPU for %dms burst ", time, cur->getId(), cur->burstTimeLeft());
     }
     if(p == COMPLETED){
-        // printf("time %dms: Process %c completed a CPU burst; %d bursts to go ", time, cur->getId(), cur->burstTimeLeft());
+        printf("time %dms: Process %c completed a CPU burst; %d bursts to go ", time, cur->getId(), cur->burstTimeLeft());
     }
     if(p == BLOCK){
-        // printf("time %dms: Process %c switching out of CPU; will block on I/O until time %dms", time, cur->getId(), time+cur->ioTimeLeft());
+        printf("time %dms: Process %c switching out of CPU; will block on I/O until time %dms", time, cur->getId(), time+cur->ioTimeLeft());
     }
     if(p == IOCOMPLETED){
         if(0 != cur->getTau()){
@@ -84,23 +84,17 @@ void printPreemptState(std::vector<Process> *queue, Process* cur, PrintState pSt
 	if(pState == PREEMPT){
 		printf("Process %d (tau %.0fms) will preempt %c ", (queue->front()).getId(), (queue->front()).getTau(), cur->getId());
 	}
-	
-}
-
-
-PrintState getPrintState(eventType evnt){
-	if(evnt == burstDone) return COMPLETED;
-    else if(evnt == ioDone) return IOCOMPLETED;
-    else if(evnt == arrival) return ARRIVE;
-    else if(evnt == tslice) return TIMESLICE;
-    // else if(evnt == switchOUT) 
-    // else if(evnt == switchIN)
-	else{
-		perror("ERROR: Not recognized state");
-		return ERROR;
+	if(pState == IOCOMPLETED){
+		if(queue->empty()){
+			printf("added to ready queue ");
+		}
+		else{
+			printf("preempting %c ", cur->getId());
+		}
 	}
 	
 }
+
 
 void setTauForAll(std::vector<Process> *queue, bool isUsingTau){
 	if(isUsingTau) return;
@@ -238,6 +232,7 @@ void Scheduler::switchOUT() {
 }
 
 void Scheduler::switchIN() {
+	
     // PRINT HERE: time 160ms: Process B (tau 100ms) started using the CPU with 85ms burst remaining [Q <empty>]
     if (!RUNNING) {
         *RUNNING = *READY.begin();
@@ -247,13 +242,19 @@ void Scheduler::switchIN() {
     } else {
         // do nothing - preempts also set NULL
     }
+	pState = START;
+	printProcessState(pState, simulation_timer, RUNNING);
+	printSimQ(&READY);
 }
 
-void Scheduler::contextSwitchTime(bool switchIN) {
+void Scheduler::contextSwitchTime(bool swtIN) {
     // advance timer here
     simulation_timer += tcs/2;
 
-    if (switchIN) {
+    if (swtIN) {
+		pState = PREEMPT;
+		printPreemptState(&READY, RUNNING, pState);
+		printSimQ(&READY);
         // PRINT HERE: time 405ms: Process A (tau 54ms) will preempt B [Q A]
     }
 
@@ -265,6 +266,9 @@ void Scheduler::contextSwitchTime(bool switchIN) {
             // jump by 1 ms until we hit half of context switch time
             if (iobegin->doIO(1)) {
                 // return to READY
+				pState = IOCOMPLETED;
+				printProcessState(pState, simulation_timer, &(*iobegin));
+				printSimQ(&READY);
                 // PRINT HERE: time 92ms: Process A (tau 78ms) completed I/O; preempting B [Q A]
                 // PRINT HERE: time 4556ms: Process B (tau 121ms) completed I/O; added to ready queue [Q B]
                 this->READY.push_back(*iobegin);
@@ -281,9 +285,9 @@ void Scheduler::contextSwitchTime(bool switchIN) {
         for(unsigned int i = 0; i < tcs/2; ++i) {
             if (arr->advanceArrival(1)) {
                 // process arrives, add to READY
-				// pState = ARRIVE;
-				// printProcessState(pState, simulation_timer, *arr);
-				// printSimQ(&READY);
+				pState = ARRIVE;
+				printProcessState(pState, simulation_timer, &(*arr));
+				printSimQ(&READY);
                 // PRINT HERE: time 18ms: Process B (tau 100ms) arrived; added to ready queue [Q B]
                 READY.push_back(*arr);
                 arr = ARRIVAL.erase(arr);
@@ -397,10 +401,16 @@ void Scheduler::fastForward(unsigned int deltaT) {
         remainingtimeslice -= deltaT;
         if (0 == remainingtimeslice) {
             // timeslice done, context switch
+			pSTATE = TIMESLICE;
+			printProcessState(pState, simulation_timer, RUNNING);
             if (READY.empty()) {
                 // no context switch
+				printPreemptState(&READY, RUNNING, pSTATE);
+				printSimQ(&READY);
                 // PRINT HERE: time 4709ms: Time slice expired; no preemption because ready queue is empty [Q <empty>]
             } else {
+				printPreemptState(&READY, RUNNING, pSTATE);
+				printSimQ(&READY);
                 // PRINT HERE: time 2908ms: Time slice expired; process B preempted with 6ms to go [Q A]
                 contextSwitch();
             }
@@ -438,16 +448,26 @@ void Scheduler::fastForward(unsigned int deltaT) {
             if (isPreemptive && RUNNING
                     && iobegin->getTau() < RUNNING->getTau()) {
                 // preempt
+
                 // PRINT HERE: time 92ms: Process A (tau 78ms) completed I/O; preempting B [Q A]
                 READY.push_back(*iobegin);
                 // SORT QUEUE
                 iobegin = BLOCKED.erase(iobegin);
+				pState = IOCOMPLETED;
+				printProcessState(pState, simulation_timer, &(*iobegin));
+				printPreemptState(&READY, RUNNING, pState);
+				printSimQ(&READY);
                 contextSwitch();
             } else {
                 // return to READY
+
                 READY.push_back(*iobegin);
                 iobegin = BLOCKED.erase(iobegin);
-                // PRINT HERE: time 4556ms: Process B (tau 121ms) completed I/O; added to ready queue [Q B]
+				
+				pState = IOCOMPLETED;
+				printProcessState(pState, simulation_timer, &(*iobegin));
+				printSimQ(&READY);
+				// PRINT HERE: time 4556ms: Process B (tau 121ms) completed I/O; added to ready queue [Q B]
             }
         }
         ++iobegin;
@@ -495,8 +515,6 @@ bool Scheduler::advance() {
         return false;
     } else { // things are happening, so go do them
 		//Printing statement 
-		
-		//printProcessState(
         fastForward(thingsHappening[0].timeToEvent);
         return true;
     }
