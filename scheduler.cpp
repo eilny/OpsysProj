@@ -16,6 +16,14 @@ bool sortByArrvial(Process a, Process b){
 
 }
 
+bool sortByTau(Process a, Process b){
+	if(a.getTau() == b.getTau()){
+		return (a.getId() < b.getId);
+	}
+	return (a.getTau() < b.getTau());
+	
+}
+
 //Print Simulation Queue
 void printSimQ(std::vector<Process> *queue){
     printf("[Q");
