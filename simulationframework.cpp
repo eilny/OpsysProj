@@ -64,8 +64,7 @@ void printArrivalList(std::vector<Process> processes, int numProcess){
 int main( int argc, char ** argv) {
 
     if (argc < 8 || argc > 9) {
-        fprintf(stderr, "USAGE: ./a.out <seed> <lambda> <upper bound> < number of processes> \
-                <context switch time (even)> <alpha > <RR time slice> [<RR [BEGINNING|END]>]\n");
+        fprintf(stderr, "USAGE: ./a.out <seed> <lambda> <upper bound> < number of processes> <context switch time (even)> <alpha > <RR time slice> [<RR [BEGINNING|END]>]\n");
         return EXIT_FAILURE;
     }
 

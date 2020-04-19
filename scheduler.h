@@ -12,8 +12,7 @@ enum eventType {
     , ioDone
     , arrival
     , tslice
-    , switchOUT
-    , switchIN
+    , cswitch
 };
 
 struct Event {
@@ -28,9 +27,9 @@ enum PrintState {ARRIVE, START, COMPLETED, BLOCK, IOCOMPLETED, TAU, TERMINATED, 
 // parent class for scheduling algorithms
 class Scheduler {
     private:
-        std::vector<Process> ARRIVAL;
-        std::vector<Process> READY;
-        std::vector<Process> BLOCKED;
+        std::deque<Process> ARRIVAL;
+        std::deque<Process> READY;
+        std::deque<Process> BLOCKED;
         std::vector<Process> COMPLETE;
 
         Process* RUNNING;
@@ -54,11 +53,9 @@ class Scheduler {
         unsigned int remainingtimeslice; // for detecting end of timeslice
 		unsigned int rraddbgn;
 
-        bool sortsByTime;
+        bool useTau;
 		
 		PrintState pState;
-		
-		// bool sortByArrvial(Process a, Process b);
 
     public:
 		//Constructor
@@ -66,11 +63,12 @@ class Scheduler {
 			unsigned int tcontext,
 			unsigned int tmslice, 
 			unsigned int rr);
+        ~Scheduler();
 		void setAlgorithm(std::string algo);
 	
 	
-        void switchOUT();
-        void switchIN();
+        bool switchOUT();
+        bool switchIN();
         void contextSwitchTime(bool switchIN);
         void contextSwitch();
         void processArrival(Process newProcess);
@@ -78,12 +76,10 @@ class Scheduler {
         unsigned int nextEvent();
 		std::vector<Event> nextEvents();
         bool advance();
-        void fastForward(unsigned int deltaT);
+        void fastForward(std::vector<Event> nxtEvnts);
 		unsigned long getTimer();
 		
 		void runSimulation(std::string algo);
-		
-		
 };
 
 #endif
