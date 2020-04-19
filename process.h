@@ -36,6 +36,7 @@ class Process {
 	public:
 	//Get & Set functions for accessing the variables 	
         Process(char pid, unsigned int arr, unsigned int processed, float lambda, float alp);
+		Process(const Process &p);
         ~Process();
         void contextSwitch(bool switch_in);
 		void addBurst(unsigned int time);
@@ -47,6 +48,15 @@ class Process {
 		unsigned int getNumBurstsLeft();
 		unsigned int getNumIOLeft();
 		float getTau();
+		float getAlpha(){return alpha;}
+		unsigned long getTurnaround(){return turnaround_time;}
+		unsigned long getWaitTime(){return wait_time;}
+		unsigned int getPristineArrival(){return pristine_arrival_time;}
+        std::vector<unsigned int> * getPristineBurst(){return pristine_burst_times;}
+        std::vector<unsigned int> * getPristineIo(){return pristine_io_times;}
+		std::vector<unsigned int> * getBurstTimes(){return burst_times;}
+        std::vector<unsigned int> * getIoTimes(){return io_times;}
+		
 
         State setState(State newstate);
         unsigned int burstTimeLeft();
@@ -61,6 +71,8 @@ class Process {
         void finishedCPUBurst();
         void finishedIOBlock();
         void setTurnAround(unsigned long runTimeEnd);
+		
+		
 
 };
 #endif

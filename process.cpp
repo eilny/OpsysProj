@@ -5,6 +5,14 @@
 
 
 
+void copyVector(std::vector<unsigned int>* newVec, std::vector<unsigned int> oldVec){
+	for(unsigned int i = 0; i < oldVec.size(); i++){
+		newVec->push_back(oldVec[i]);
+	}
+	
+}
+
+
 Process::Process( char pid, unsigned int arr
         , unsigned int nbursts, float lambda, float alp)
     : process_ID(pid)
@@ -26,6 +34,34 @@ Process::Process( char pid, unsigned int arr
     pristine_io_times->reserve(nbursts-1);
     pristine_io_times->reserve(nbursts-1);
 }
+
+//Copy Constructor 
+Process::Process(const Process &p){
+	process_ID = p.process_ID;
+	arrival_time = p.arrival_time;
+    turnaround_time = p.turnaround_time;
+	wait_time = p.wait_time;
+	
+	tau = p.tau; 
+	alpha = p.alpha;
+	
+	burst_times = new std::vector<unsigned int>;
+	io_times = new std::vector<unsigned int>;
+	
+	pristine_arrival_time = p.pristine_arrival_time;
+	
+	pristine_burst_times =  new std::vector<unsigned int>;
+	pristine_io_times =  new std::vector<unsigned int>;
+	
+	//Copy Vectors over 
+	copyVector(this->burst_times, *(p.burst_times));
+	copyVector(this->io_times, *(p.io_times));
+	copyVector(this->pristine_burst_times, *(p.pristine_burst_times));
+	copyVector(this->pristine_io_times, *(p.pristine_io_times));
+	
+}
+
+
 
 Process::~Process() {
     // delete burst/io time queues
