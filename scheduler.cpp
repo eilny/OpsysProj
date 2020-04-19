@@ -505,7 +505,7 @@ void Scheduler::fastForward(std::vector<Event> nxtEvnts) {
                         // preempt
                         // PRINT HERE: time 92ms: Process A (tau 78ms) completed I/O; preempting B [Q A]
                         pState = IOCOMPLETED;
-                        printProcessState(pState, simulation_timer, &(*iobegin));
+                        printProcessState(pState, simulation_timer, &(READY.front()));
                         printPreemptState(&READY, RUNNING, pState);
                         printSimQ(&READY);
                         ++preemptions;
@@ -515,22 +515,23 @@ void Scheduler::fastForward(std::vector<Event> nxtEvnts) {
                     }
                 } else {
                     // return to READY
-                    READY.push_back(BLOCKED.front());
-                    BLOCKED.pop_front();
+                    // READY.push_back(BLOCKED.front());
+                    // BLOCKED.pop_front();
 
                     pState = IOCOMPLETED;
-                    printProcessState(pState, simulation_timer, &(*iobegin));
+                    printProcessState(pState, simulation_timer, &(READY.front()));
                     printSimQ(&READY);
                     // PRINT HERE: time 4556ms: Process B (tau 121ms) completed I/O; added to ready queue [Q B]
                 }
                 break;
 
             case arrival:
+				pState = ARRIVE;
+                printProcessState(pState, simulation_timer, &(ARRIVAL.front()));
+				
                 READY.push_back(ARRIVAL.front());
                 ARRIVAL.pop_front();
 
-                pState = ARRIVE;
-                printProcessState(pState, simulation_timer, &(*arr));
                 printSimQ(&READY);
                 // PRINT HERE: time 18ms: Process B (tau 100ms) arrived; added to ready queue [Q B]
                 if (useTau) {
@@ -606,9 +607,9 @@ unsigned long Scheduler::getTimer(){
 void Scheduler::runSimulation(std::string algo){
 	this->setAlgorithm(algo);
 	while(advance()){
-		#ifdef DEBUG_MODE
-			printf("Advancing simulation in loop!\n");
-		#endif
+		// #ifdef DEBUG_MODE
+			// printf("Advancing simulation in loop!\n");
+		// #endif
 	}
 	printf("time %ldms: Simulator ended for %s ", this->simulation_timer, algo.c_str());
 	printSimQ(&READY);
