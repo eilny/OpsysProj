@@ -16,8 +16,8 @@ class Process {
         char process_ID; 
         unsigned int arrival_time; 
 
-        unsigned int turnaround_time;
-        unsigned int wait_time;
+        unsigned long turnaround_time;
+        unsigned long wait_time;
 		
 		float tau;
 		float alpha;
@@ -56,9 +56,11 @@ class Process {
 		void recalculateTau(int burstTime);
         bool advanceArrival(unsigned int deltaT);
 		void setTau(bool useTau);
+        void waitTime(unsigned int deltaT);
 
         void finishedCPUBurst();
         void finishedIOBlock();
+        void setTurnAround(unsigned long runTimeEnd);
 
 };
 #endif

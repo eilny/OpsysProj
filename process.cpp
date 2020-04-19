@@ -138,10 +138,18 @@ void Process::setTau(bool useTau){
 	tau = 0;
 }
 
+void Process::waitTime(unsigned int deltaT) {
+    wait_time += deltaT;
+}
+
 void Process::finishedCPUBurst() {
     burst_times->erase(burst_times->begin());
 }
 
 void Process::finishedIOBlock() {
     io_times->erase(io_times->begin());
+}
+
+void Process::setTurnAround(unsigned long runTimeEnd) {
+    turnaround_time = runTimeEnd - pristine_arrival_time;
 }

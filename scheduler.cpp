@@ -193,6 +193,7 @@ void Scheduler::switchOUT() {
         } else {
             // no more bursts, terminate process
             // PRINT HERE: time 4770ms: Process B terminated [Q <empty>]
+            RUNNING->setTurnAround(simulation_timer);
             RUNNING->setState(CMP);
             COMPLETE.push_back(*RUNNING);
         }
@@ -238,10 +239,14 @@ void Scheduler::switchOUT() {
 
 void Scheduler::switchIN() {
     // PRINT HERE: time 160ms: Process B (tau 100ms) started using the CPU with 85ms burst remaining [Q <empty>]
-    *RUNNING = *READY.begin();
-    RUNNING->setState(RUN);
-    RUNNING->contextSwitch(true);
-    READY.erase(READY.begin());
+    if (!RUNNING) {
+        *RUNNING = *READY.begin();
+        RUNNING->setState(RUN);
+        RUNNING->contextSwitch(true);
+        READY.erase(READY.begin());
+    } else {
+        // do nothing - preempts also set NULL
+    }
 }
 
 void Scheduler::contextSwitchTime(bool switchIN) {
@@ -410,6 +415,19 @@ void Scheduler::fastForward(unsigned int deltaT) {
             // burst finisheds - context switch
             contextSwitch();
         }
+    } else {
+        // nothing running, anything ready?
+        if (!READY.empty()) {
+            // gotta switch
+            contextSwitch();
+        }
+    }
+
+    std::vector<Process>::iterator rdybegin = READY.begin();
+    std::vector<Process>::iterator rdyend = READY.end();
+    while (rdybegin != rdyend) {
+        rdybegin->waitTime(deltaT);
+        ++rdybegin;
     }
 
     // io block
@@ -417,11 +435,20 @@ void Scheduler::fastForward(unsigned int deltaT) {
     std::vector<Process>::iterator ioend = BLOCKED.end();
     while (iobegin != ioend) {
         if (iobegin->doIO(deltaT)) {
-            // return to READY
-            // PRINT HERE: time 92ms: Process A (tau 78ms) completed I/O; preempting B [Q A]
-            // PRINT HERE: time 4556ms: Process B (tau 121ms) completed I/O; added to ready queue [Q B]
-            READY.push_back(*iobegin);
-            iobegin = BLOCKED.erase(iobegin);
+            if (isPreemptive && RUNNING
+                    && iobegin->getTau() < RUNNING->getTau()) {
+                // preempt
+                // PRINT HERE: time 92ms: Process A (tau 78ms) completed I/O; preempting B [Q A]
+                READY.push_back(*iobegin);
+                // SORT QUEUE
+                iobegin = BLOCKED.erase(iobegin);
+                contextSwitch();
+            } else {
+                // return to READY
+                READY.push_back(*iobegin);
+                iobegin = BLOCKED.erase(iobegin);
+                // PRINT HERE: time 4556ms: Process B (tau 121ms) completed I/O; added to ready queue [Q B]
+            }
         }
         ++iobegin;
     }
@@ -438,6 +465,11 @@ void Scheduler::fastForward(unsigned int deltaT) {
             // PRINT HERE: time 18ms: Process B (tau 100ms) arrived; added to ready queue [Q B]
             READY.push_back(*arr);
             arr = ARRIVAL.erase(arr);
+            if (isPreemptive && RUNNING
+                    && arr->getTau() < RUNNING->getTau()) {
+                // preempt
+                contextSwitch();
+            }
         }
         ++arr;
     }
