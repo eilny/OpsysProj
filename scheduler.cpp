@@ -336,6 +336,7 @@ void Scheduler::contextSwitchTime(bool swtIN) {
 				printSimQ(&READY);
                 // PRINT HERE: time 92ms: Process A (tau 78ms) completed I/O; preempting B [Q A]
                 // PRINT HERE: time 4556ms: Process B (tau 121ms) completed I/O; added to ready queue [Q B]
+
 				iobegin->finishedIOBlock();
                 READY.push_back(*iobegin);
                 iobegin = BLOCKED.erase(iobegin);
@@ -533,12 +534,14 @@ void Scheduler::fastForward(std::vector<Event> nxtEvnts) {
                             contextSwitch();
                         } else {
                             // not preemptive but sorts by tau, needs print statements
+							pState = IOCOMPLETED;
+                            printProcessState(pState, simulation_timer, &(READY.front()));
+                            printPreemptState(&READY, RUNNING, pState);
                         }
                     } else {
                         // return to READY
                         // READY.push_back(BLOCKED.front());
                         // BLOCKED.pop_front();
-
                         pState = IOCOMPLETED;
                         printProcessState(pState, simulation_timer, &(READY.front()));
                         printSimQ(&READY);
