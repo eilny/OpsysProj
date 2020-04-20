@@ -129,9 +129,6 @@ State Process::setState(State newstate) {
 }
 
 unsigned int Process::burstTimeLeft() {
-    if (this->burst_times->empty()) {
-        return 0;
-    }
     return *this->burst_times->begin();
 }
 
