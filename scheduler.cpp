@@ -70,7 +70,8 @@ void printPreemptState(std::deque<Process*> *queue, Process* cur, PrintState pSt
 
 // Printing statements 
 // Needs to be modified for process class
-void printProcessState(PrintState p, int time, Process *cur, std::deque<Process*> *queue, unsigned int tcs = 0, Process* newAdded = NULL){
+void printProcessState(PrintState p, int time, Process *cur
+        , std::deque<Process*> *queue, unsigned int tcs = 0, Process* newAdded = NULL){
 	//Don't print past 1000ms 
 	//Commented out for testing
 	/*if(time > 1000){
@@ -78,42 +79,53 @@ void printProcessState(PrintState p, int time, Process *cur, std::deque<Process*
 	}*/
     if( p == ARRIVE ){
         if(0 != cur->getTau()){
-            printf("time %dms: Process %c (tau %.0fms) arrived; added to ready queue ", time, cur->getId(), cur->getTau());
+            printf("time %dms: Process %c (tau %.0fms) arrived; added to ready queue "
+                    , time, cur->getId(), cur->getTau());
         }else{
-            printf("time %dms: Process %c arrived; added to ready queue ", time, cur->getId());
+            printf("time %dms: Process %c arrived; added to ready queue "
+                    , time, cur->getId());
         }
     }
     if(p == START){
-        printf("time %dms: Process %c started using the CPU for %dms burst ", time, cur->getId(), cur->burstTimeLeft());
+        printf("time %dms: Process %c started using the CPU for %dms burst "
+                , time, cur->getId(), cur->burstTimeLeft());
     }
     if(p == COMPLETED){
 		if(cur->getNumBurstsLeft() == 1){
-			 printf("time %dms: Process %c completed a CPU burst; %d burst to go ", time, cur->getId(), cur->getNumBurstsLeft());
+			 printf("time %dms: Process %c completed a CPU burst; %d burst to go "
+                     , time, cur->getId(), cur->getNumBurstsLeft());
 		}
 		else{
-			printf("time %dms: Process %c completed a CPU burst; %d bursts to go ", time, cur->getId(), cur->getNumBurstsLeft());
+			printf("time %dms: Process %c completed a CPU burst; %d bursts to go "
+                    , time, cur->getId(), cur->getNumBurstsLeft());
 		}
 	}
     if(p == BLOCK){
-        printf("time %dms: Process %c switching out of CPU; will block on I/O until time %dms ", time, cur->getId(), time+cur->ioTimeLeft()+(tcs/2));
+        printf("time %dms: Process %c switching out of CPU; will block on I/O until time %dms "
+                , time, cur->getId(), time+cur->ioTimeLeft()+(tcs/2));
     }
     if(p == IOCOMPLETED){
         if(0 != cur->getTau()){
-            printf("time %dms: Process %c (tau %.0fms) completed I/O; ", time, cur->getId(), cur->getTau());
+            printf("time %dms: Process %c (tau %.0fms) completed I/O; "
+                    , time, cur->getId(), cur->getTau());
         }else{
-            printf("time %dms: Process %c completed I/O; added to ready queue ", time, cur->getId());
+            printf("time %dms: Process %c completed I/O; added to ready queue "
+                    , time, cur->getId());
         }
     }
 	if(p == IOPREEMPT){
 		if(0 != cur->getTau()){
-            printf("time %dms: Process %c (tau %.0fms) completed I/O; ", time, newAdded->getId(), newAdded->getTau());
+            printf("time %dms: Process %c (tau %.0fms) completed I/O; "
+                    , time, newAdded->getId(), newAdded->getTau());
         }else{
-            printf("time %dms: Process %c completed I/O; ", time, newAdded->getId());
+            printf("time %dms: Process %c completed I/O; "
+                    , time, newAdded->getId());
         }
 		printPreemptState(queue, cur, p, newAdded);
 	}
     if(p == TAU){
-        printf("time %dms: Recalculated tau = %.0fms for process %c ", time, cur->getTau(), cur->getId());
+        printf("time %dms: Recalculated tau = %.0fms for process %c "
+                , time, cur->getTau(), cur->getId());
     }
     if(p == TERMINATED){
         printf("time %dms: Process %c terminated ", time, cur->getId());
@@ -147,33 +159,31 @@ Scheduler::Scheduler(std::vector<Process*> *processList,
         unsigned int tcontext,
         unsigned int tmslice, 
         unsigned int rr)
-    :	tcs(tcontext)
-	,	timeslice(tmslice)
-	,	rraddbgn(rr)
-{
-    avgwait = 0;
-    avgburst = 0;
-    avgturnaround = 0;
-    preemptions = 0;
-    remainingtimeslice = tmslice;
-    simulation_timer = 0;
-    numCS = 0;
-    nextCS = 0;
-    hasTimeSlice = false;
-    isPreemptive = false;
-    useTau = false;
-    pState = ARRIVE;
+    : ARRIVAL()
+      , READY()
+      , BLOCKED()
+      , COMPLETE()
+      , RUNNING(NULL)
+      , simulation_timer(0)
+      , avgwait(0)
+      , avgburst(0)
+      , avgturnaround(0)
+      , numCS(0)
+      , tcs(tcontext)
+      , isPreemptive(false)
+      , preemptions(0)
+      , hasTimeSlice(false)
+      , timeslice(tmslice)
+      , remainingtimeslice(tmslice)
+      , rraddbgn(rr)
+      , useTau(false)
+      , pState()
 
+{
     for (const auto& p: *processList) {
         ARRIVAL.push_back(p);
     }
     std::sort (ARRIVAL.begin(), ARRIVAL.end(), sortByArrvial);
-
-    RUNNING = NULL;
-    READY;
-    BLOCKED;
-    COMPLETE;
-
 }
 
 Scheduler::~Scheduler() {
@@ -287,7 +297,6 @@ bool Scheduler::switchOUT() {
 
 					contextSwitchTime(false);
 
-                    RUNNING->contextSwitch(false);
                     RUNNING->setState(RDY);
                     READY.push_back(RUNNING);
                     remainingtimeslice = timeslice;

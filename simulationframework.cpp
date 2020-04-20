@@ -144,17 +144,17 @@ int main( int argc, char ** argv) {
     Scheduler *SJF = new Scheduler(baseProcesses, tcs, timeslice, rraddbgn);;
     Scheduler *SRT = new Scheduler(baseProcesses, tcs, timeslice, rraddbgn);;
     Scheduler *RR = new Scheduler(baseProcesses, tcs, timeslice, rraddbgn);;
-	
+
 	printArrivalList(*baseProcesses, nproc);
 	FCFS->runSimulation("FCFS");
-	
+
 	printArrivalList(*baseProcesses, nproc);
 	SJF->runSimulation("SJF");
 	printArrivalList(*baseProcesses, nproc);
 	SRT->runSimulation("SRT");
 	printArrivalList(*baseProcesses, nproc);
 	RR->runSimulation("RR");
-	
+
 	// Stat Stuff
 	
 

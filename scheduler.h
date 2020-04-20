@@ -43,7 +43,6 @@ class Scheduler {
 		
         unsigned int numCS;
         unsigned int tcs;
-        unsigned int nextCS; // for detecting next of context switch event
 
         bool isPreemptive;
         unsigned int preemptions;
