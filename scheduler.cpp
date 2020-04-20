@@ -213,7 +213,7 @@ bool Scheduler::switchOUT() {
 			// increment I/O and handle arrivals before switching this onto the I/O queue
 			contextSwitchTime(false);
 
-			RUNNING->contextSwitch(false);
+			// RUNNING->contextSwitch(false);
             RUNNING->setState(BLK);
             BLOCKED.push_back(*RUNNING);
             std::sort(BLOCKED.begin(), BLOCKED.end(), sortByIOTimeLeft);
@@ -303,10 +303,11 @@ bool Scheduler::switchIN() {
     } else {
         // do nothing - preempts also set NULL
     }
-    contextSwitchTime(true);
 	pState = START;
 	printProcessState(pState, simulation_timer, RUNNING);
 	printSimQ(&READY);
+    contextSwitchTime(true);
+
     return true;
 }
 
