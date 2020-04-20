@@ -48,7 +48,7 @@ void printSimQ(std::deque<Process> *queue){
 
 // Printing statements 
 // Needs to be modified for process class
-void printProcessState(PrintState p, int time, Process *cur){
+void printProcessState(PrintState p, int time, Process *cur, unsigned int tcs = 0){
     if( p == ARRIVE ){
         if(0 != cur->getTau()){
             printf("time %dms: Process %c (tau %.0fms) arrived; added to ready queue ", time, cur->getId(), cur->getTau());
@@ -63,7 +63,7 @@ void printProcessState(PrintState p, int time, Process *cur){
         printf("time %dms: Process %c completed a CPU burst; %d bursts to go ", time, cur->getId(), cur->getNumBurstsLeft());
     }
     if(p == BLOCK){
-        printf("time %dms: Process %c switching out of CPU; will block on I/O until time %dms", time, cur->getId(), time+cur->ioTimeLeft());
+        printf("time %dms: Process %c switching out of CPU; will block on I/O until time %dms ", time, cur->getId(), time+cur->ioTimeLeft()+(tcs/2));
     }
     if(p == IOCOMPLETED){
         if(0 != cur->getTau()){
@@ -206,7 +206,11 @@ bool Scheduler::switchOUT() {
 
             // PRINT HERE: time 156ms: Process A switching out of CPU; will block on I/O until time 311ms [Q B]
             //              block on I/O until time (simulation_timer + process->I/O + tcs/2
-            RUNNING->contextSwitch(false);
+			pState = BLOCK;
+			printProcessState(pState, simulation_timer, RUNNING, tcs);
+			printSimQ(&READY);
+
+			RUNNING->contextSwitch(false);
             RUNNING->setState(BLK);
             BLOCKED.push_back(*RUNNING);
             std::sort(BLOCKED.begin(), BLOCKED.end(), sortByIOTimeLeft);
@@ -295,10 +299,12 @@ void Scheduler::contextSwitchTime(bool swtIN) {
     // advance timer here
     simulation_timer += tcs/2;
 
-    if (swtIN) {
-		pState = PREEMPT;
-		printPreemptState(&READY, RUNNING, pState);
-		printSimQ(&READY);
+    if (swtIN) { 
+		if (isPreemptive) {
+			pState = PREEMPT;
+			printPreemptState(&READY, RUNNING, pState);
+			printSimQ(&READY);
+		}
         // PRINT HERE: time 405ms: Process A (tau 54ms) will preempt B [Q A]
     }
 
