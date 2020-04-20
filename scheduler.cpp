@@ -60,8 +60,13 @@ void printProcessState(PrintState p, int time, Process *cur, unsigned int tcs = 
         printf("time %dms: Process %c started using the CPU for %dms burst ", time, cur->getId(), cur->burstTimeLeft());
     }
     if(p == COMPLETED){
-        printf("time %dms: Process %c completed a CPU burst; %d bursts to go ", time, cur->getId(), cur->getNumBurstsLeft());
-    }
+		if(cur->getNumBurstsLeft() == 1){
+			 printf("time %dms: Process %c completed a CPU burst; %d burst to go ", time, cur->getId(), cur->getNumBurstsLeft());
+		}
+		else{
+			printf("time %dms: Process %c completed a CPU burst; %d bursts to go ", time, cur->getId(), cur->getNumBurstsLeft());
+		}
+	}
     if(p == BLOCK){
         printf("time %dms: Process %c switching out of CPU; will block on I/O until time %dms ", time, cur->getId(), time+cur->ioTimeLeft()+(tcs/2));
     }
@@ -188,12 +193,13 @@ bool Scheduler::switchOUT() {
     // return true if actually switched something out
     if (RUNNING->getNumBurstsLeft() && RUNNING->burstTimeLeft() == 0) {
         RUNNING->finishedCPUBurst();
-		pState = COMPLETED; 
-		printProcessState(pState , simulation_timer, RUNNING);
-		printSimQ(&READY);
+
         // PRINT HERE: time 67ms: Process A (tau 100ms) completed a CPU burst; 15 bursts to go [Q B]
 
         if (RUNNING->getNumBurstsLeft()) {
+			pState = COMPLETED; 
+			printProcessState(pState , simulation_timer, RUNNING);
+			printSimQ(&READY);
             // more bursts, not complete yet
             if (useTau) {
                 // recalculate tau before switching to i/o
@@ -303,10 +309,11 @@ bool Scheduler::switchIN() {
     } else {
         // do nothing - preempts also set NULL
     }
+
+    contextSwitchTime(true);
 	pState = START;
 	printProcessState(pState, simulation_timer, RUNNING);
 	printSimQ(&READY);
-    contextSwitchTime(true);
 
     return true;
 }
