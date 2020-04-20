@@ -34,7 +34,7 @@ int getNumBurst() {
 }
 
 //Setups up process list 
-void getProcessList(int seed, float lambda, int maxTime, std::vector<Process> *processes, int numProcess, float alpha){
+void getProcessList(int seed, float lambda, int maxTime, std::vector<Process*> *processes, int numProcess, float alpha){
 	srand48(seed); //Seeds the rng 
 	//Fills in each process for total process 
 	for(int i = 0; i < numProcess; i++){
@@ -48,15 +48,18 @@ void getProcessList(int seed, float lambda, int maxTime, std::vector<Process> *p
 			}
 			temp->addIo(ceil(getTime(lambda, maxTime)));
 		}
-		processes->push_back(*temp);
+		processes->push_back(temp);
 	}
 	
 } 
 
 //Prints Starting Arrival list 
-void printArrivalList(std::vector<Process> processes, int numProcess){
+void printArrivalList(std::vector<Process*> processes, int numProcess){
 	for(int i = 0; i < numProcess; ++i){
-		fprintf(stdout, "Process %c [NEW] (arrival time %d ms) %d CPU bursts\n", processes[i].getId(), processes[i].getArrival(), processes[i].getNumBursts()); 
+		fprintf(stdout, "Process %c [NEW] (arrival time %d ms) %d CPU bursts\n"
+				, processes[i]->getId()
+				, processes[i]->getArrival()
+				, processes[i]->getNumBursts());
 	}
 }
 
@@ -115,11 +118,8 @@ int main( int argc, char ** argv) {
 
 
     // set up queues
-    std::vector<Process> READY;
-    std::vector<Process> RUNNING;
-    std::vector<Process> BLOCKED;
 	
-	std::vector<Process> *baseProcesses = new std::vector<Process>();
+	std::vector<Process*> *baseProcesses = new std::vector<Process*>();
 
 	// Get Processes List 
 	getProcessList(seed, lambda, upperbound, baseProcesses, nproc, alpha);

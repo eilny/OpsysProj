@@ -27,7 +27,7 @@ class Process {
 
         // not to be messed with after creation
         // needed for stats at end, determining turnaround/wait as well
-        unsigned int pristine_arrival_time; 
+        unsigned int pristine_arrival_time;
         std::vector<unsigned int> * pristine_burst_times;
         std::vector<unsigned int> * pristine_io_times;
 

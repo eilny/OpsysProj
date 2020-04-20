@@ -27,10 +27,10 @@ enum PrintState {ARRIVE, START, COMPLETED, BLOCK, IOCOMPLETED, IOPREEMPT, TAU, T
 // parent class for scheduling algorithms
 class Scheduler {
     private:
-        std::deque<Process> ARRIVAL;
-        std::deque<Process> READY;
-        std::deque<Process> BLOCKED;
-        std::vector<Process> COMPLETE;
+        std::deque<Process*> ARRIVAL;
+        std::deque<Process*> READY;
+        std::deque<Process*> BLOCKED;
+        std::vector<Process*> COMPLETE;
 
         Process* RUNNING;
 
@@ -59,7 +59,7 @@ class Scheduler {
 
     public:
 		//Constructor
-		Scheduler(std::vector<Process> *processList,
+		Scheduler(std::vector<Process*> *processList,
 			unsigned int tcontext,
 			unsigned int tmslice, 
 			unsigned int rr);
@@ -71,7 +71,7 @@ class Scheduler {
         bool switchIN();
         void contextSwitchTime(bool switchIN);
         void contextSwitch();
-        void processArrival(Process newProcess);
+        void processArrival(Process * newProcess);
         void storeEventIfSooner(std::vector<Event> & events, unsigned int time, enum eventType type);
         unsigned int nextEvent();
 		std::vector<Event> nextEvents();
