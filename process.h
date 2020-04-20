@@ -45,8 +45,10 @@ class Process {
 		char getId();
 		unsigned int getArrival();
 		unsigned int getNumBursts();
+
 		unsigned int getNumBurstsLeft();
 		unsigned int getNumIOLeft();
+
 		float getTau();
 		float getAlpha(){return alpha;}
 		unsigned long getTurnaround(){return turnaround_time;}
@@ -61,15 +63,19 @@ class Process {
         State setState(State newstate);
         unsigned int burstTimeLeft();
         unsigned int ioTimeLeft();
+
         bool doWork(unsigned int deltaT);
         bool doIO(unsigned int deltaT);
-		void recalculateTau(int burstTime);
         bool advanceArrival(unsigned int deltaT);
+
+		void recalculateTau(int burstTime);
 		void setTau(bool useTau);
+
         void waitTime(unsigned int deltaT);
 
         void finishedCPUBurst();
         void finishedIOBlock();
+
         void setTurnAround(unsigned long runTimeEnd);
 		
 		
