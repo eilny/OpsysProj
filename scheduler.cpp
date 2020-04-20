@@ -147,7 +147,7 @@ Scheduler::Scheduler(std::vector<Process> *processList,
     avgburst = 0;
     avgturnaround = 0;
     preemptions = 0;
-    remainingtimeslice = 0;
+    remainingtimeslice = tmslice;
     simulation_timer = 0;
     numCS = 0;
     nextCS = 0;
@@ -229,8 +229,6 @@ bool Scheduler::switchOUT() {
             RUNNING->setState(BLK);
             BLOCKED.push_back(*RUNNING);
             std::sort(BLOCKED.begin(), BLOCKED.end(), sortByIOTimeLeft);
-            RUNNING = NULL;
-            return true;
 
         } else {
             // no more bursts, terminate process
@@ -243,7 +241,9 @@ bool Scheduler::switchOUT() {
 
             // after turnaround is done, increment timer by tcs/2
 			contextSwitchTime(false);
+
         }
+        remainingtimeslice = timeslice;
         RUNNING = NULL;
         return true;
 
@@ -259,7 +259,8 @@ bool Scheduler::switchOUT() {
 				pState = TIMESLICE;
 
                 if (READY.empty()) {
-                    // don't bother switching out
+                    // don't bother switching out - reset timeslice
+					remainingtimeslice = timeslice;
 					printProcessState(pState, simulation_timer, RUNNING, &READY);
                     // PRINT HERE: time 585ms: Time slice expired; no preemption because ready queue is empty [Q <empty>]
                     return false;
@@ -275,6 +276,7 @@ bool Scheduler::switchOUT() {
                     RUNNING->contextSwitch(false);
                     RUNNING->setState(RDY);
                     READY.push_back(*RUNNING);
+                    remainingtimeslice = timeslice;
                     RUNNING = NULL;
                     return true;
                 }
@@ -290,11 +292,13 @@ bool Scheduler::switchOUT() {
             RUNNING->contextSwitch(false);
             RUNNING->setState(RDY);
             READY.push_back(*RUNNING);
+            remainingtimeslice = timeslice;
             RUNNING = NULL;
             return true;
         }
     }
 
+    remainingtimeslice = timeslice;
     RUNNING = NULL;
     return true;
 }
@@ -582,11 +586,13 @@ void Scheduler::fastForward(std::vector<Event> nxtEvnts) {
                         // no context switch
 						printProcessState(pState, simulation_timer, RUNNING, &READY);
                         // PRINT HERE: time 4709ms: Time slice expired; no preemption because ready queue is empty [Q <empty>]
+						remainingtimeslice = timeslice;
                     } else {
 						printProcessState(pState, simulation_timer, RUNNING, &READY);
                         // PRINT HERE: time 2908ms: Time slice expired; process B preempted with 6ms to go [Q A]
                         ++preemptions;
                         contextSwitch();
+                        remainingtimeslice = timeslice;
                     }
                 }
                 break;
@@ -602,6 +608,15 @@ void Scheduler::fastForward(std::vector<Event> nxtEvnts) {
 bool Scheduler::advance() {
     // return true if advanced onwards
     // return false if finished
+	// first check if we're finished with the simulation
+	if (!RUNNING
+			&& READY.empty()
+			&& ARRIVAL.empty()
+			&& BLOCKED.empty()) {
+		// everything empty, we're done here, simulation is over
+		// call stat checking functions? -> calculate avg wait, avg burst, avg turnaround, #preemptions, #cs?
+		return false;
+	}
 
     // advance to next event
     std::vector<Event> thingsHappening = nextEvents();
