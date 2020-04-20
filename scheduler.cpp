@@ -44,11 +44,37 @@ void printSimQ(std::deque<Process> *queue){
 	fflush(stdout);
 
 }
-
+//For Preemption printing
+void printPreemptState(std::deque<Process> *queue, Process* cur, PrintState pState){
+	if(pState == TIMESLICE){
+		if(queue->empty()){
+			printf(" no preemption because ready queue is empty ");
+		}else{
+			printf(" process %c preempted with %dms to go ", cur->getId(), cur->burstTimeLeft());
+		}
+	}
+	if(pState == PREEMPT){
+		printf("Process %c (tau %.0fms) will preempt %c ", (queue->front()).getId(), (queue->front()).getTau(), cur->getId());
+	}
+	if(pState == IOCOMPLETED){
+		if(queue->empty()){
+			printf("added to ready queue ");
+		}
+		else{
+			printf("preempting %c ", cur->getId());
+		}
+	}
+	
+}
 
 // Printing statements 
 // Needs to be modified for process class
-void printProcessState(PrintState p, int time, Process *cur, unsigned int tcs = 0){
+void printProcessState(PrintState p, int time, Process *cur, std::deque<Process> *queue, unsigned int tcs = 0){
+	//Don't print past 1000ms 
+	//Commented out for testing
+	/*if(time > 1000){
+		return;
+	}*/
     if( p == ARRIVE ){
         if(0 != cur->getTau()){
             printf("time %dms: Process %c (tau %.0fms) arrived; added to ready queue ", time, cur->getId(), cur->getTau());
@@ -76,6 +102,7 @@ void printProcessState(PrintState p, int time, Process *cur, unsigned int tcs = 
         }else{
             printf("time %dms: Process %c completed I/O; added to ready queue ", time, cur->getId());
         }
+		printPreemptState(queue, cur, p);
     }
     if(p == TAU){
         printf("time %dms: Recalculated tau = %.0fms for process %c ", time, cur->getTau(), cur->getId());
@@ -85,34 +112,16 @@ void printProcessState(PrintState p, int time, Process *cur, unsigned int tcs = 
     }
 	if(p == TIMESLICE){
 		printf("time %dms: Time slice expired; ", time);
+		printPreemptState(queue, cur, p);
 	}
 	if(p == PREEMPT){
 		printf("time %dms: ", time);
+		printPreemptState(queue, cur, p);
 	}
+	printSimQ(queue);
     fflush(stdout);
 }
 
-void printPreemptState(std::deque<Process> *queue, Process* cur, PrintState pState){
-	if(pState == TIMESLICE){
-		if(queue->empty()){
-			printf(" no preemption because ready queue is empty ");
-		}else{
-			printf(" process %c preempted with %dms to go ", cur->getId(), cur->burstTimeLeft());
-		}
-	}
-	if(pState == PREEMPT){
-		printf("Process %c (tau %.0fms) will preempt %c ", (queue->front()).getId(), (queue->front()).getTau(), cur->getId());
-	}
-	if(pState == IOCOMPLETED){
-		if(queue->empty()){
-			printf("added to ready queue ");
-		}
-		else{
-			printf("preempting %c ", cur->getId());
-		}
-	}
-	
-}
 
 
 void setTauForAll(std::deque<Process> *queue, bool isUsingTau){
@@ -198,23 +207,20 @@ bool Scheduler::switchOUT() {
 
         if (RUNNING->getNumBurstsLeft()) {
 			pState = COMPLETED; 
-			printProcessState(pState , simulation_timer, RUNNING);
-			printSimQ(&READY);
+			printProcessState(pState , simulation_timer, RUNNING, &READY);
             // more bursts, not complete yet
             if (useTau) {
                 // recalculate tau before switching to i/o
                 RUNNING->recalculateTau(RUNNING->burstTimeLeft());
 				pState = TAU;
-				printProcessState(pState, simulation_timer, RUNNING);
-				printSimQ(&READY);
+				printProcessState(pState, simulation_timer, RUNNING, &READY);
                 // PRINT HERE: time 177ms: Recalculated tau = 103ms for process B [Q A]
             }
 
             // PRINT HERE: time 156ms: Process A switching out of CPU; will block on I/O until time 311ms [Q B]
             //              block on I/O until time (simulation_timer + process->I/O + tcs/2
 			pState = BLOCK;
-			printProcessState(pState, simulation_timer, RUNNING, tcs);
-			printSimQ(&READY);
+			printProcessState(pState, simulation_timer, RUNNING, &READY, tcs);
 
 			// increment I/O and handle arrivals before switching this onto the I/O queue
 			contextSwitchTime(false);
@@ -229,8 +235,7 @@ bool Scheduler::switchOUT() {
         } else {
             // no more bursts, terminate process
 			pState = TERMINATED;
-			printProcessState(pState, simulation_timer, RUNNING);
-			printSimQ(&READY);
+			printProcessState(pState, simulation_timer, RUNNING, &READY);
             // PRINT HERE: time 4770ms: Process B terminated [Q <empty>]
             RUNNING->setTurnAround(simulation_timer);
             RUNNING->setState(CMP);
@@ -252,19 +257,17 @@ bool Scheduler::switchOUT() {
             	// have been preempted by something else?
             } else {
 				pState = TIMESLICE;
-				printProcessState(pState, simulation_timer, RUNNING);
+
                 if (READY.empty()) {
                     // don't bother switching out
-					printPreemptState(&READY, RUNNING, pState);
-					printSimQ(&READY);
+					printProcessState(pState, simulation_timer, RUNNING, &READY);
                     // PRINT HERE: time 585ms: Time slice expired; no preemption because ready queue is empty [Q <empty>]
                     return false;
                 } else {
                     // do timeslice preemption
                     // preempt and put back on ready queue
                     ++preemptions;
-					printPreemptState(&READY, RUNNING, pState);
-					printSimQ(&READY);
+					printProcessState(pState, simulation_timer, RUNNING, &READY);
                     // PRINT HERE: time 465ms: Time slice expired; process B preempted with 70ms to go [Q A]
 
 					contextSwitchTime(false);
@@ -312,9 +315,7 @@ bool Scheduler::switchIN() {
 
     contextSwitchTime(true);
 	pState = START;
-	printProcessState(pState, simulation_timer, RUNNING);
-	printSimQ(&READY);
-
+	printProcessState(pState, simulation_timer, RUNNING, &READY);
     return true;
 }
 
@@ -325,8 +326,7 @@ void Scheduler::contextSwitchTime(bool swtIN) {
     if (swtIN) {
         if (isPreemptive) {
             pState = PREEMPT;
-            printPreemptState(&READY, RUNNING, pState);
-            printSimQ(&READY);
+           	printProcessState(pState, simulation_timer, RUNNING, &READY);
             // PRINT HERE: time 405ms: Process A (tau 54ms) will preempt B [Q A]
         }
     }
@@ -340,8 +340,7 @@ void Scheduler::contextSwitchTime(bool swtIN) {
             if (iobegin->doIO(1)) {
                 // return to READY
 				pState = IOCOMPLETED;
-				printProcessState(pState, simulation_timer, &(*iobegin));
-				printSimQ(&READY);
+				printProcessState(pState, simulation_timer, &(*iobegin), &READY);
                 // PRINT HERE: time 92ms: Process A (tau 78ms) completed I/O; preempting B [Q A]
                 // PRINT HERE: time 4556ms: Process B (tau 121ms) completed I/O; added to ready queue [Q B]
 
@@ -362,8 +361,7 @@ void Scheduler::contextSwitchTime(bool swtIN) {
             if (arr->advanceArrival(1)) {
                 // process arrives, add to READY
 				pState = ARRIVE;
-				printProcessState(pState, simulation_timer, &(*arr));
-				printSimQ(&READY);
+				printProcessState(pState, simulation_timer, &(*arr), &READY);
                 // PRINT HERE: time 18ms: Process B (tau 100ms) arrived; added to ready queue [Q B]
                 READY.push_back(*arr);
                 arr = ARRIVAL.erase(arr);
@@ -535,37 +533,34 @@ void Scheduler::fastForward(std::vector<Event> nxtEvnts) {
                             // preempt
                             // PRINT HERE: time 92ms: Process A (tau 78ms) completed I/O; preempting B [Q A]
                             pState = IOCOMPLETED;
-                            printProcessState(pState, simulation_timer, &(READY.front()));
-                            printPreemptState(&READY, RUNNING, pState);
-                            printSimQ(&READY);
+                            printProcessState(pState, simulation_timer, &(READY.front()), &READY);
                             ++preemptions;
                             contextSwitch();
                         } else {
                             // not preemptive but sorts by tau, needs print statements
 							pState = IOCOMPLETED;
-                            printProcessState(pState, simulation_timer, &(READY.front()));
-                            printPreemptState(&READY, RUNNING, pState);
+                            printProcessState(pState, simulation_timer, &(READY.front()), &READY);
                         }
                     } else {
                         // return to READY
                         // READY.push_back(BLOCKED.front());
                         // BLOCKED.pop_front();
                         pState = IOCOMPLETED;
-                        printProcessState(pState, simulation_timer, &(READY.front()));
-                        printSimQ(&READY);
+                        printProcessState(pState, simulation_timer, &(READY.front()), &READY);
                         // PRINT HERE: time 4556ms: Process B (tau 121ms) completed I/O; added to ready queue [Q B]
                     }
                 }
                 break;
 
             case arrival:
-				pState = ARRIVE;
-                printProcessState(pState, simulation_timer, &(ARRIVAL.front()));
+
+               
 				
                 READY.push_back(ARRIVAL.front());
+				pState = ARRIVE;
+				printProcessState(pState, simulation_timer, &(ARRIVAL.front()), &READY);
                 ARRIVAL.pop_front();
-
-                printSimQ(&READY);
+				
                 // PRINT HERE: time 18ms: Process B (tau 100ms) arrived; added to ready queue [Q B]
                 if (useTau) {
                     // sort READY
@@ -583,15 +578,12 @@ void Scheduler::fastForward(std::vector<Event> nxtEvnts) {
                 if (0 == remainingtimeslice) {
                     // timeslice done, context switch
                     pState = TIMESLICE;
-                    printProcessState(pState, simulation_timer, RUNNING);
                     if (READY.empty()) {
                         // no context switch
-                        printPreemptState(&READY, RUNNING, pState);
-                        printSimQ(&READY);
+						printProcessState(pState, simulation_timer, RUNNING, &READY);
                         // PRINT HERE: time 4709ms: Time slice expired; no preemption because ready queue is empty [Q <empty>]
                     } else {
-                        printPreemptState(&READY, RUNNING, pState);
-                        printSimQ(&READY);
+						printProcessState(pState, simulation_timer, RUNNING, &READY);
                         // PRINT HERE: time 2908ms: Time slice expired; process B preempted with 6ms to go [Q A]
                         ++preemptions;
                         contextSwitch();
