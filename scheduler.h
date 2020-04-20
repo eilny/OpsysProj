@@ -21,7 +21,7 @@ struct Event {
 };
 
 //For picking print statements
-enum PrintState {ARRIVE, START, COMPLETED, BLOCK, IOCOMPLETED, TAU, TERMINATED, TIMESLICE, PREEMPT, ERROR};
+enum PrintState {ARRIVE, START, COMPLETED, BLOCK, IOCOMPLETED, IOPREEMPT, TAU, TERMINATED, TIMESLICE, PREEMPT, ERROR};
 
 
 // parent class for scheduling algorithms

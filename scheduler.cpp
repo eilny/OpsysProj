@@ -45,7 +45,7 @@ void printSimQ(std::deque<Process> *queue){
 
 }
 //For Preemption printing
-void printPreemptState(std::deque<Process> *queue, Process* cur, PrintState pState){
+void printPreemptState(std::deque<Process> *queue, Process* cur, PrintState pState, Process* newAdded = NULL){
 	if(pState == TIMESLICE){
 		if(queue->empty()){
 			printf(" no preemption because ready queue is empty ");
@@ -56,8 +56,8 @@ void printPreemptState(std::deque<Process> *queue, Process* cur, PrintState pSta
 	if(pState == PREEMPT){
 		printf("Process %c (tau %.0fms) will preempt %c ", (queue->front()).getId(), (queue->front()).getTau(), cur->getId());
 	}
-	if(pState == IOCOMPLETED){
-		if(queue->empty()){
+	if(pState == IOPREEMPT){
+		if(cur->getId() != newAdded->getId()){
 			printf("added to ready queue ");
 		}
 		else{
@@ -69,7 +69,7 @@ void printPreemptState(std::deque<Process> *queue, Process* cur, PrintState pSta
 
 // Printing statements 
 // Needs to be modified for process class
-void printProcessState(PrintState p, int time, Process *cur, std::deque<Process> *queue, unsigned int tcs = 0){
+void printProcessState(PrintState p, int time, Process *cur, std::deque<Process> *queue, unsigned int tcs = 0, Process* newAdded = NULL){
 	//Don't print past 1000ms 
 	//Commented out for testing
 	/*if(time > 1000){
@@ -102,8 +102,15 @@ void printProcessState(PrintState p, int time, Process *cur, std::deque<Process>
         }else{
             printf("time %dms: Process %c completed I/O; added to ready queue ", time, cur->getId());
         }
-		printPreemptState(queue, cur, p);
     }
+	if(p == IOPREEMPT){
+		if(0 != cur->getTau()){
+            printf("time %dms: Process %c (tau %.0fms) completed I/O; ", time, newAdded->getId(), newAdded->getTau());
+        }else{
+            printf("time %dms: Process %c completed I/O; ", time, newAdded->getId());
+        }
+		printPreemptState(queue, cur, p, newAdded);
+	}
     if(p == TAU){
         printf("time %dms: Recalculated tau = %.0fms for process %c ", time, cur->getTau(), cur->getId());
     }
@@ -528,7 +535,7 @@ void Scheduler::fastForward(std::vector<Event> nxtEvnts) {
                 } else {
                 	BLOCKED.front().finishedIOBlock();
                     READY.push_back(BLOCKED.front());
-                    BLOCKED.pop_front();
+                    
                     if (useTau) {
                         // SORT QUEUE
                         std::sort(READY.begin(), READY.end(), sortByTau);
@@ -536,21 +543,24 @@ void Scheduler::fastForward(std::vector<Event> nxtEvnts) {
                                 && iobegin->getTau() < RUNNING->getTau()) {
                             // preempt
                             // PRINT HERE: time 92ms: Process A (tau 78ms) completed I/O; preempting B [Q A]
-                            pState = IOCOMPLETED;
-                            printProcessState(pState, simulation_timer, &(READY.front()), &READY);
+                            pState = IOPREEMPT;
+                            printProcessState(pState, simulation_timer, &(BLOCKED.front()), &READY, 0, RUNNING);
+							BLOCKED.pop_front();
                             ++preemptions;
                             contextSwitch();
                         } else {
                             // not preemptive but sorts by tau, needs print statements
 							pState = IOCOMPLETED;
-                            printProcessState(pState, simulation_timer, &(READY.front()), &READY);
+                            printProcessState(pState, simulation_timer, &(BLOCKED.front()), &READY);
+							BLOCKED.pop_front();
                         }
                     } else {
                         // return to READY
                         // READY.push_back(BLOCKED.front());
                         // BLOCKED.pop_front();
                         pState = IOCOMPLETED;
-                        printProcessState(pState, simulation_timer, &(READY.front()), &READY);
+                        printProcessState(pState, simulation_timer, &(BLOCKED.front()), &READY);
+						BLOCKED.pop_front();
                         // PRINT HERE: time 4556ms: Process B (tau 121ms) completed I/O; added to ready queue [Q B]
                     }
                 }
