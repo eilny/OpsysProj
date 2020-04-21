@@ -5,9 +5,9 @@
 
 
 
-void copyVector(std::vector<unsigned int>* newVec, std::vector<unsigned int> oldVec){
-	for(unsigned int i = 0; i < oldVec.size(); i++){
-		newVec->push_back(oldVec[i]);
+void copyVector(std::vector<unsigned int>* newVec, std::vector<unsigned int>* oldVec){
+	for(unsigned int i = 0; i < oldVec->size(); i++){
+		newVec->push_back(oldVec->at(i));
 	}
 	
 }
@@ -23,6 +23,7 @@ Process::Process( char pid, unsigned int arr
     this->turnaround_time = 0;
     this->wait_time = 0;
 	this->tau = 1/lambda;
+	this->prevBurst = 0;
 
     this->burst_times = new std::vector<unsigned int>;
     this->io_times = new std::vector<unsigned int>;
@@ -31,7 +32,7 @@ Process::Process( char pid, unsigned int arr
 
     pristine_burst_times->reserve(nbursts);
     burst_times->reserve(nbursts);
-    pristine_io_times->reserve(nbursts-1);
+    io_times->reserve(nbursts-1);
     pristine_io_times->reserve(nbursts-1);
 }
 
@@ -44,6 +45,7 @@ Process::Process(const Process &p){
 	
 	tau = p.tau; 
 	alpha = p.alpha;
+	prevBurst = p.prevBurst;
 	
 	burst_times = new std::vector<unsigned int>;
 	io_times = new std::vector<unsigned int>;
@@ -54,11 +56,10 @@ Process::Process(const Process &p){
 	pristine_io_times =  new std::vector<unsigned int>;
 	
 	//Copy Vectors over 
-	copyVector(this->burst_times, *(p.burst_times));
-	copyVector(this->io_times, *(p.io_times));
-	copyVector(this->pristine_burst_times, *(p.pristine_burst_times));
-	copyVector(this->pristine_io_times, *(p.pristine_io_times));
-	
+	*burst_times = *(p.burst_times);
+	*io_times = *(p.io_times);
+	*pristine_burst_times = *(p.pristine_burst_times);
+	*pristine_io_times = *(p.pristine_io_times);
 }
 
 
@@ -156,8 +157,8 @@ bool Process::doIO(unsigned int deltaT) {
     return false;
 }
 
-void Process::recalculateTau(int burstTime){
-	this->tau = (this->alpha)*(burstTime + (this->tau));
+void Process::recalculateTau(){
+	this->tau = std::ceil((this->alpha*this->prevBurst) +  ((1-this->alpha)*(this->tau)));
 	
 }
 
@@ -179,6 +180,7 @@ void Process::waitTime(unsigned int deltaT) {
 }
 
 void Process::finishedCPUBurst() {
+	prevBurst = pristine_burst_times->at(pristine_burst_times->size() - burst_times->size());
     burst_times->erase(burst_times->begin());
 }
 

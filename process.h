@@ -21,6 +21,7 @@ class Process {
 		
 		float tau;
 		float alpha;
+		unsigned int prevBurst; 
 
         std::vector<unsigned int> * burst_times;
         std::vector<unsigned int> * io_times;
@@ -68,7 +69,7 @@ class Process {
         bool doIO(unsigned int deltaT);
         bool advanceArrival(unsigned int deltaT);
 
-		void recalculateTau(int burstTime);
+		void recalculateTau();
 		void setTau(bool useTau);
 
         void waitTime(unsigned int deltaT);

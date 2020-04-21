@@ -30,6 +30,13 @@ bool sortByIOTimeLeft(Process* a, Process* b){
 	return (a->ioTimeLeft() < b->ioTimeLeft());
 }
 
+bool sortByRemainingBurstTime(Process* a, Process* b){
+	if(a->ioTimeLeft() == b->ioTimeLeft()){
+		return (a->getId() < b->getId());
+	}
+	return (a->ioTimeLeft() < b->ioTimeLeft());
+}
+
 //Print Simulation Queue
 void printSimQ(std::deque<Process*> *queue){
     printf("[Q");
@@ -72,11 +79,11 @@ void printPreemptState(std::deque<Process*> *queue, Process* cur, PrintState pSt
 // Needs to be modified for process class
 void printProcessState(PrintState p, int time, Process *cur
         , std::deque<Process*> *queue, unsigned int tcs = 0, Process* newAdded = NULL){
-	//Don't print past 1000ms 
-	//Commented out for testing
-	/*if(time > 1000){
+	// Don't print past 1000ms 
+	// Commented out for testing
+	if(time > 1000 && p != TERMINATED){
 		return;
-	}*/
+	}
     if( p == ARRIVE ){
         if(0 != cur->getTau()){
             printf("time %dms: Process %c (tau %.0fms) arrived; added to ready queue "
@@ -87,17 +94,33 @@ void printProcessState(PrintState p, int time, Process *cur
         }
     }
     if(p == START){
-        printf("time %dms: Process %c started using the CPU for %dms burst "
+		if(0 != cur->getTau()){
+			printf("time %dms: Process %c (tau %.0fms) started using the CPU for %dms burst "
+                , time, cur->getId(), cur->getTau(), cur->burstTimeLeft());
+		}else{
+			printf("time %dms: Process %c started using the CPU for %dms burst "
                 , time, cur->getId(), cur->burstTimeLeft());
+		}
     }
     if(p == COMPLETED){
-		if(cur->getNumBurstsLeft() == 1){
-			 printf("time %dms: Process %c completed a CPU burst; %d burst to go "
-                     , time, cur->getId(), cur->getNumBurstsLeft());
-		}
-		else{
-			printf("time %dms: Process %c completed a CPU burst; %d bursts to go "
-                    , time, cur->getId(), cur->getNumBurstsLeft());
+		if(0 != cur->getTau()){
+			if(cur->getNumBurstsLeft() == 1){
+				 printf("time %dms: Process %c (tau %.0fms) completed a CPU burst; %d burst to go "
+						 , time, cur->getId(), cur->getTau(), cur->getNumBurstsLeft());
+			}
+			else{
+				printf("time %dms: Process %c (tau %.0fms) completed a CPU burst; %d bursts to go "
+						, time, cur->getId(), cur->getTau(), cur->getNumBurstsLeft());
+			}
+		}else{
+			if(cur->getNumBurstsLeft() == 1){
+				 printf("time %dms: Process %c completed a CPU burst; %d burst to go "
+						 , time, cur->getId(), cur->getNumBurstsLeft());
+			}
+			else{
+				printf("time %dms: Process %c completed a CPU burst; %d bursts to go "
+						, time, cur->getId(), cur->getNumBurstsLeft());
+			}	
 		}
 	}
     if(p == BLOCK){
@@ -235,7 +258,7 @@ bool Scheduler::switchOUT() {
             // more bursts, not complete yet
             if (useTau) {
                 // recalculate tau before switching to i/o
-                RUNNING->recalculateTau(RUNNING->burstTimeLeft());
+                RUNNING->recalculateTau();
 				pState = TAU;
 				printProcessState(pState, simulation_timer, RUNNING, &READY);
                 // PRINT HERE: time 177ms: Recalculated tau = 103ms for process B [Q A]
@@ -584,8 +607,6 @@ void Scheduler::fastForward(std::vector<Event> nxtEvnts) {
 
             case arrival:
 
-               
-				
                 READY.push_back(ARRIVAL.front());
 				pState = ARRIVE;
 				printProcessState(pState, simulation_timer, (ARRIVAL.front()), &READY);

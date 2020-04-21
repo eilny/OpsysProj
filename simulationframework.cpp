@@ -49,18 +49,29 @@ void getProcessList(int seed, float lambda, int maxTime, std::vector<Process*> *
 			temp->addIo(ceil(getTime(lambda, maxTime)));
 		}
 		processes->push_back(temp);
+		// delete temp;
 	}
 	
 } 
 
 //Prints Starting Arrival list 
-void printArrivalList(std::vector<Process*> processes, int numProcess){
+void printArrivalList(std::vector<Process*> processes, int numProcess, float tau = 0){
 	for(int i = 0; i < numProcess; ++i){
-		fprintf(stdout, "Process %c [NEW] (arrival time %d ms) %d CPU bursts\n"
+		if(tau != 0){
+			fprintf(stdout, "Process %c [NEW] (arrival time %d ms) %d CPU bursts (tau %.0fms)\n"
+				, processes[i]->getId()
+				, processes[i]->getArrival()
+				, processes[i]->getNumBursts()
+				, tau);
+		}
+		else{
+			fprintf(stdout, "Process %c [NEW] (arrival time %d ms) %d CPU bursts\n"
 				, processes[i]->getId()
 				, processes[i]->getArrival()
 				, processes[i]->getNumBursts());
+		}
 	}
+	
 }
 
 
@@ -127,36 +138,63 @@ int main( int argc, char ** argv) {
 	
 	
 #ifdef DEBUG_MODE 
-	//Testing function 
+	// Testing function 
 	// printArrivalList(baseProcesses, nproc);
 	// printSimQ(baseProcesses);
 
-	//Test scheduler class construtor 
+	// Test scheduler class construtor 
 	Scheduler *sch = new Scheduler(baseProcesses, tcs, timeslice, rraddbgn);
 	printArrivalList(*baseProcesses, nproc);
-	sch->runSimulation("FCFS");
+	sch->runSimulation("SJF");
 	printf("Scheduler: %lu\n", sch->getTimer());
+	delete sch;
 	
 #endif
-
+	/*
     // Run simulations
-    Scheduler *FCFS = new Scheduler(baseProcesses, tcs, timeslice, rraddbgn);;
-    Scheduler *SJF = new Scheduler(baseProcesses, tcs, timeslice, rraddbgn);;
-    Scheduler *SRT = new Scheduler(baseProcesses, tcs, timeslice, rraddbgn);;
-    Scheduler *RR = new Scheduler(baseProcesses, tcs, timeslice, rraddbgn);;
-
+	//FCFS
+    Scheduler *FCFS = new Scheduler(baseProcesses, tcs, timeslice, rraddbgn);
 	printArrivalList(*baseProcesses, nproc);
 	FCFS->runSimulation("FCFS");
-
-	printArrivalList(*baseProcesses, nproc);
-	SJF->runSimulation("SJF");
-	printArrivalList(*baseProcesses, nproc);
-	SRT->runSimulation("SRT");
-	printArrivalList(*baseProcesses, nproc);
-	RR->runSimulation("RR");
-
-	// Stat Stuff
+	printf("\n");
 	
 
+	delete baseProcesses;
+	baseProcesses = new std::vector<Process*>();
+	getProcessList(seed, lambda, upperbound, baseProcesses, nproc, alpha);
+	printArrivalList(*baseProcesses, nproc, 1/lambda);
+	//SJF
+	Scheduler *SJF = new Scheduler(baseProcesses, tcs, timeslice, rraddbgn);
+	SJF->runSimulation("SJF");
+	printf("\n");
+	
+	
+	delete baseProcesses;
+	baseProcesses = new std::vector<Process*>();
+	getProcessList(seed, lambda, upperbound, baseProcesses, nproc, alpha);
+	printArrivalList(*baseProcesses, nproc, 1/lambda);
+	//SRT
+	Scheduler *SRT = new Scheduler(baseProcesses, tcs, timeslice, rraddbgn);
+	SRT->runSimulation("SRT");
+	printf("\n");
+	
+	
+	delete baseProcesses;
+	baseProcesses = new std::vector<Process*>();
+	getProcessList(seed, lambda, upperbound, baseProcesses, nproc, alpha);
+	printArrivalList(*baseProcesses, nproc);
+	//RR
+	Scheduler *RR = new Scheduler(baseProcesses, tcs, timeslice, rraddbgn);
+	RR->runSimulation("RR");
+	printf("\n");
+	// Stat Stuff
+	
+	delete FCFS;
+	delete SJF;
+	delete SRT;
+	delete RR;
+	
+	*/
+	delete baseProcesses;
 }
 
