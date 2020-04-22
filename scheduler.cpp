@@ -374,7 +374,7 @@ void Scheduler::contextSwitchTime(bool swtIN) {
     simulation_timer += tcs/2;
 
     if (swtIN) {
-        if (isPreemptive) {
+        if (isPreemptive && !READY.empty()) {
             pState = PREEMPT;
            	printProcessState(pState, simulation_timer, RUNNING, &READY);
             // PRINT HERE: time 405ms: Process A (tau 54ms) will preempt B [Q A]
@@ -579,7 +579,7 @@ void Scheduler::fastForward(std::vector<Event> nxtEvnts) {
                         // SORT QUEUE
                         std::sort(READY.begin(), READY.end(), sortByTau);
                         if (isPreemptive && RUNNING
-                                && (*iobegin)->getTau() < RUNNING->getTau()) {
+                                && (BLOCKED.front())->getTau() < RUNNING->getTau()) {
                             // preempt
                             // PRINT HERE: time 92ms: Process A (tau 78ms) completed I/O; preempting B [Q A]
                             pState = IOPREEMPT;
@@ -616,7 +616,7 @@ void Scheduler::fastForward(std::vector<Event> nxtEvnts) {
                 if (useTau) {
                     // sort READY
                     if (isPreemptive && RUNNING
-                            && (*arr)->getTau() < RUNNING->getTau()) {
+                            && (READY.back())->getTau() < RUNNING->getTau()) {
                         // preempt
                         // PRINT HERE: preemption?
                         ++preemptions;
