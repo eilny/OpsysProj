@@ -78,8 +78,6 @@ class Process {
         void finishedIOBlock();
 
         void setTurnAround(unsigned long runTimeEnd);
-		
-		
 
 };
 #endif

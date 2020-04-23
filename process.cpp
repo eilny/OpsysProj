@@ -96,10 +96,12 @@ void Process::addBurst(unsigned int time){
     pristine_burst_times->push_back(time);
 	this->burst_times->push_back(time);
 }
+
 void Process::addIo(unsigned int time){
     pristine_io_times->push_back(time);
 	this->io_times->push_back(time);
 }
+
 char Process::getId(){
 	return this->process_ID;
 }

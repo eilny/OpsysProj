@@ -33,6 +33,10 @@ class Scheduler {
 
         Process* RUNNING;
 
+        // for stat tracking of avg burst duration
+        std::vector<unsigned int> BURSTS;
+        unsigned long burstTimeStart;
+
         // simulation timer
         unsigned long simulation_timer = 0;
 
@@ -65,7 +69,7 @@ class Scheduler {
 		void setAlgorithm(std::string algo);
 	
 	
-        void contextSwitchTime(bool switchIN);
+        bool contextSwitchTime(bool switchIN);
         bool switchOUT();
         bool switchIN();
         void contextSwitch();
@@ -77,7 +81,7 @@ class Scheduler {
         
         bool advance();
         void updateTimers(unsigned int deltaT);
-        void fastForward(std::vector<Event> nxtEvnts);
+        void fastForward(std::vector<Event> & nxtEvnts);
 
 		unsigned long getTimer();
 		

@@ -237,6 +237,92 @@ void Scheduler::setAlgorithm(std::string algo) {
 	
 }
 
+bool Scheduler::contextSwitchTime(bool swtIN) {
+    // returns a bool - whether another switchIN/contextSwitch needs to be called
+    //      again after completion of this one due to process finishing i/o or arriving
+    //      with higher priority
+    bool preemptAfter = false;
+
+    // advance timer here
+    simulation_timer += tcs/2;
+
+    if (swtIN) {
+        if (isPreemptive && !READY.empty()) {
+            pState = PREEMPT;
+           	printProcessState(pState, simulation_timer, RUNNING, &READY);
+            // PRINT HERE: time 405ms: Process A (tau 54ms) will preempt B [Q A]
+        }
+    }
+
+    // this expects that the switched in process is no longer on READY
+    for (Process * rdy : READY) {
+        // increase wait time for all processes not being switched in
+        rdy->waitTime(tcs/2);
+    }
+
+    // also advance io
+    for (Process* io : BLOCKED) {
+        for (unsigned int i = 0; i < tcs/2; ++i) {
+            // jump by 1 ms until we hit half of context switch time
+            if (io->doIO(1)) {
+                // return to READY
+				pState = IOCOMPLETED;
+				printProcessState(pState, simulation_timer, io, &READY);
+                // PRINT HERE: time 92ms: Process A (tau 78ms) completed I/O; preempting B [Q A]
+                // PRINT HERE: time 4556ms: Process B (tau 121ms) completed I/O; added to ready queue [Q B]
+
+				io->finishedIOBlock();
+                READY.push_back(io);
+                BLOCKED.pop_front();
+                // added to READY, increase wait time appropriately (i.e. remainder of tcs/2)
+                io->waitTime(tcs/2 - i);
+                if (useTau) {
+                    std::sort(READY.begin(), READY.end(), sortByTau);
+                }
+
+                if (isPreemptive && swtIN) {
+                    if (RUNNING && !READY.empty()
+                            && READY.front()->getTau() < RUNNING->getTau()) {
+                        // print 'will preempt' here, need to call switchIN again after
+                        preemptAfter = true;
+                    }
+                }
+                continue; // don't underflow or try to decrement io any more
+            }
+        }
+    }
+
+    // also advance arrivals
+    for(Process* arr : ARRIVAL) {
+        for(unsigned int i = 0; i < tcs/2; ++i) {
+            if (arr->advanceArrival(1)) {
+                // process arrives, add to READY
+				pState = ARRIVE;
+				printProcessState(pState, simulation_timer, arr, &READY);
+                // PRINT HERE: time 18ms: Process B (tau 100ms) arrived; added to ready queue [Q B]
+
+                READY.push_back(arr);
+                ARRIVAL.pop_front();
+                arr->waitTime(tcs/2 - i);
+                if (useTau) {
+                    std::sort(READY.begin(), READY.end(), sortByTau);
+                }
+
+                if (isPreemptive && swtIN) {
+                    if (RUNNING && !READY.empty()
+                            && READY.front()->getTau() < RUNNING->getTau()) {
+                        // print 'will preempt' here, need to call switchIN again after
+                        preemptAfter = true;
+                    }
+                }
+                continue;
+            }
+        }
+    }
+
+    return preemptAfter;
+}
+
 bool Scheduler::switchOUT() {
     // return true if actually switched something out
 
@@ -247,6 +333,8 @@ bool Scheduler::switchOUT() {
 
     // if we are switching something out, save the burst time
     // --> is it still burst time if preempted? stats question...
+    // this allows for burst duration of 0 if back to back preemptions - is that ok?
+    BURSTS.push_back(simulation_timer - burstTimeStart);
 
     if (RUNNING->burstTimeLeft()) {
         // preemption, not done
@@ -309,53 +397,9 @@ bool Scheduler::switchOUT() {
     return true;
 }
 
-void Scheduler::contextSwitchTime(bool swtIN) {
-    // advance timer here
-    simulation_timer += tcs/2;
-
-    if (swtIN) {
-        if (isPreemptive && !READY.empty()) {
-            pState = PREEMPT;
-           	printProcessState(pState, simulation_timer, RUNNING, &READY);
-            // PRINT HERE: time 405ms: Process A (tau 54ms) will preempt B [Q A]
-        }
-    }
-
-    // also advance io
-    for (Process* io : BLOCKED) {
-        for (unsigned int i = 0; i < tcs/2; ++i) {
-            // jump by 1 ms until we hit half of context switch time
-            if (io->doIO(1)) {
-                // return to READY
-				pState = IOCOMPLETED;
-				printProcessState(pState, simulation_timer, io, &READY);
-                // PRINT HERE: time 92ms: Process A (tau 78ms) completed I/O; preempting B [Q A]
-                // PRINT HERE: time 4556ms: Process B (tau 121ms) completed I/O; added to ready queue [Q B]
-
-				io->finishedIOBlock();
-                READY.push_back(io);
-                BLOCKED.pop_front();
-            }
-        }
-    }
-
-    // also advance arrivals
-    for(Process* arr : ARRIVAL) {
-        for(unsigned int i = 0; i < tcs/2; ++i) {
-            if (arr->advanceArrival(1)) {
-                // process arrives, add to READY
-				pState = ARRIVE;
-				printProcessState(pState, simulation_timer, arr, &READY);
-                // PRINT HERE: time 18ms: Process B (tau 100ms) arrived; added to ready queue [Q B]
-                READY.push_back(arr);
-                ARRIVAL.pop_front();
-            }
-        }
-    }
-}
-
 bool Scheduler::switchIN() {
     // return true if actually switched something in
+    bool preemptAfter = false;
 	
     // PRINT HERE: time 160ms: Process B (tau 100ms) started using the CPU with 85ms burst remaining [Q <empty>]
     if (READY.empty()) {
@@ -372,10 +416,15 @@ bool Scheduler::switchIN() {
         remainingtimeslice = timeslice;
     }
 
-    contextSwitchTime(true);
+    // something is supposed to preempt after, need to call contextSwitch again
+    preemptAfter = contextSwitchTime(true);
+
 	pState = START;
 	printProcessState(pState, simulation_timer, RUNNING, &READY);
-    return true;
+    burstTimeStart = simulation_timer; // burst starts after the time to switch in
+    // can check if !RUNNING to see if we switched something in, but it won't catch the tslice failed to 
+    //      swap out - although that's in switchOUT anyway
+    return preemptAfter;
 }
 
 void Scheduler::contextSwitch() {
@@ -383,12 +432,16 @@ void Scheduler::contextSwitch() {
 
     // SWITCH OUT
     if (switchOUT()) {
-        contextSwitchTime(false);
+        // contextSwitchTime(false);
+        // do we need to do anything if something is or is not switched out?
     }
 
     // SWITCH IN
-    if (!READY.empty()) {
-        switchIN(); // calls contextSwitchTime inside to print 'started using CPU' after C/S in
+    if (switchIN()) {
+        // calls contextSwitchTime inside to print 'started using CPU' after C/S in
+        // need to process if something was supposed to preempt but could not because switch IN began
+        contextSwitch();
+        return;
     }
 
     if (hasTimeSlice) {
@@ -486,7 +539,7 @@ void Scheduler::updateTimers(unsigned int deltaT) {
 
 }
 
-void Scheduler::fastForward(std::vector<Event> nxtEvnts) {
+void Scheduler::fastForward(std::vector<Event> & nxtEvnts) {
 
     updateTimers(nxtEvnts[0].timeToEvent);
 
@@ -502,6 +555,7 @@ void Scheduler::fastForward(std::vector<Event> nxtEvnts) {
 
             case ioDone:
                 // add to READY
+                BLOCKED.front()->finishedIOBlock();
                 READY.push_back(BLOCKED.front());
 
                 // sort if needed
@@ -590,6 +644,27 @@ bool Scheduler::advance() {
 			&& BLOCKED.empty()) {
 		// everything empty, we're done here, simulation is over
 		// call stat checking functions? -> calculate avg wait, avg burst, avg turnaround, #preemptions, #cs?
+
+        // preemptions and numCS should already be handled
+        
+        // calculate avg wait
+        if (COMPLETE.size()) {
+            unsigned int nproc = COMPLETE.size();
+            for (Process * cmp : COMPLETE) {
+                avgwait += (float)cmp->getWaitTime();
+                avgturnaround += (float)cmp->getTurnaround();
+            }
+            avgwait /= nproc;
+            avgturnaround /= nproc;
+        }
+
+        if (BURSTS.size()) { // not super necessary, but just for safety
+            for (unsigned int btime : BURSTS) {
+                avgburst += btime;
+            }
+            avgburst /= BURSTS.size();
+        }
+
 		return false;
 	}
 
