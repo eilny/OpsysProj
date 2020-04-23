@@ -357,6 +357,9 @@ bool Scheduler::switchOUT() {
                 READY.push_back(RUNNING);
             }
         } else if (isPreemptive) {
+        	pState = PREEMPT;
+        	printProcessState(pState, simulation_timer, RUNNING, &READY);
+
             contextSwitchTime(false);
 
             READY.push_back(RUNNING);
@@ -391,6 +394,8 @@ bool Scheduler::switchOUT() {
 
             RUNNING->setTurnAround(simulation_timer);
             COMPLETE.push_back(RUNNING);
+
+            contextSwitchTime(false);
         }
     }
     RUNNING = NULL;
@@ -558,6 +563,10 @@ void Scheduler::fastForward(std::vector<Event> & nxtEvnts) {
                 BLOCKED.front()->finishedIOBlock();
                 READY.push_back(BLOCKED.front());
 
+                // print i/o complete
+				pState = IOCOMPLETED;
+				printProcessState(pState, simulation_timer, BLOCKED.front(), &READY);
+
                 // sort if needed
                 if (useTau) {
                     std::sort(READY.begin(), READY.end(), sortByTau);
@@ -581,6 +590,9 @@ void Scheduler::fastForward(std::vector<Event> & nxtEvnts) {
                 } else {
                     READY.push_back(ARRIVAL.front());
                 }
+
+				pState = ARRIVE;
+				printProcessState(pState, simulation_timer, ARRIVAL.front(), &READY);
 
                 // sort if needed
                 if (useTau) {
