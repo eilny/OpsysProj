@@ -263,9 +263,38 @@ bool Scheduler::contextSwitchTime(bool swtIN) {
 
     // also advance io
     for (Process* io : BLOCKED) {
-        for (unsigned int i = 0; i < tcs/2; ++i) {
+        for (unsigned int i = 1; i <= tcs/2; ++i) {
             // jump by 1 ms until we hit half of context switch time
+        	if (io->ioTimeLeft() == 0) {
+        		// catch unhandled io
+				pState = IOCOMPLETED;
+				printProcessState(pState, simulation_timer, io, &READY);
+                // PRINT HERE: time 92ms: Process A (tau 78ms) completed I/O; preempting B [Q A]
+                // PRINT HERE: time 4556ms: Process B (tau 121ms) completed I/O; added to ready queue [Q B]
+
+				io->finishedIOBlock();
+                READY.push_back(io);
+                BLOCKED.pop_front();
+                // added to READY, increase wait time appropriately (i.e. remainder of tcs/2)
+                io->waitTime(tcs/2 - i);
+                if (useTau) {
+                    std::sort(READY.begin(), READY.end(), sortByTau);
+                }
+
+                if (isPreemptive && swtIN) {
+                    if (RUNNING && !READY.empty()
+                            && READY.front()->getTau() < RUNNING->getTau()) {
+                        // print 'will preempt' here, need to call switchIN again after
+                        preemptAfter = true;
+                    }
+                }
+                continue; // don't underflow or try to decrement io any more
+        	}
             if (io->doIO(1)) {
+            	if (i == tcs/2) {
+            		// don't print, need to print after next process is switched in
+            		continue;
+            	}
                 // return to READY
 				pState = IOCOMPLETED;
 				printProcessState(pState, simulation_timer, io, &READY);
@@ -296,7 +325,35 @@ bool Scheduler::contextSwitchTime(bool swtIN) {
     // also advance arrivals
     for(Process* arr : ARRIVAL) {
         for(unsigned int i = 0; i < tcs/2; ++i) {
+        	if (arr->getArrival() == 0) {
+        		// catch unhandled arr
+				pState = IOCOMPLETED;
+				printProcessState(pState, simulation_timer, arr, &READY);
+                // PRINT HERE: time 92ms: Process A (tau 78ms) completed I/O; preempting B [Q A]
+                // PRINT HERE: time 4556ms: Process B (tau 121ms) completed I/O; added to ready queue [Q B]
+
+                READY.push_back(arr);
+                ARRIVAL.pop_front();
+                // added to READY, increase wait time appropriately (i.e. remainder of tcs/2)
+                arr->waitTime(tcs/2 - i);
+                if (useTau) {
+                    std::sort(READY.begin(), READY.end(), sortByTau);
+                }
+
+                if (isPreemptive && swtIN) {
+                    if (RUNNING && !READY.empty()
+                            && READY.front()->getTau() < RUNNING->getTau()) {
+                        // print 'will preempt' here, need to call switchIN again after
+                        preemptAfter = true;
+                    }
+                }
+                continue; // don't underflow or try to decrement arr any more
+        	}
             if (arr->advanceArrival(1)) {
+            	if (i == tcs/2) {
+            		// don't print, need to print after next process is switched in
+            		continue;
+            	}
                 // process arrives, add to READY
 				pState = ARRIVE;
 				printProcessState(pState, simulation_timer, arr, &READY);
@@ -438,7 +495,6 @@ void Scheduler::contextSwitch() {
 
     // SWITCH OUT
     if (switchOUT()) {
-        // contextSwitchTime(false);
         // do we need to do anything if something is or is not switched out?
     }
 
@@ -634,7 +690,6 @@ void Scheduler::fastForward(std::vector<Event> & nxtEvnts) {
         }
     }
 
-    // processed all events, deal with switching in (out is handled in burstDone
     if (!RUNNING) {
        switchIN();
     } else if (isPreemptive && useTau && !READY.empty()) {
