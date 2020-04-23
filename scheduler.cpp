@@ -4,6 +4,7 @@
 #include <deque>
 #include <algorithm> 
 #include <string>
+#
 
 #include "scheduler.h"
 
@@ -125,7 +126,7 @@ void printProcessState(PrintState p, int time, Process *cur
     }
     if (p == IOCOMPLETED) {
         if (0 != cur->getTau()) {
-            printf("time %dms: Process %c (tau %.0fms) completed I/O; "
+            printf("time %dms: Process %c (tau %.0fms) completed I/O; added to ready queue "
                     , time, cur->getId(), cur->getTau());
         } else {
             printf("time %dms: Process %c completed I/O; added to ready queue "
@@ -708,4 +709,21 @@ void Scheduler::runSimulation(std::string algo) {
 	printSimQ(&READY);
 }
 
+void Scheduler::printStats(std::string algo) {
+	
+	FILE *sim_stats = fopen("simout.txt", "a");
+	if(sim_stats == NULL){
+		perror("ERROR: Could not open file simout.txt");
+		exit(1);
+	}
 
+	fprintf(sim_stats, "Algorithm %s\n", algo.c_str());
+	fprintf(sim_stats, "-- average CPU burst time: %.2f ms\n", avgburst);
+	fprintf(sim_stats, "-- average wait time: %.2f ms\n", avgwait);
+	fprintf(sim_stats, "-- average turnaround time: %.2f ms\n", avgturnaround);
+	fprintf(sim_stats, "-- total number of context switched: %d\n", numCS);
+	fprintf(sim_stats, "-- total number of preemptions: %ud\n", preemptions);
+	
+	fclose(sim_stats);
+	
+}

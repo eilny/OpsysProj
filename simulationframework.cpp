@@ -188,6 +188,12 @@ int main( int argc, char ** argv) {
 	RR->runSimulation("RR");
 	printf("\n");
 	// Stat Stuff
+	FCFS->printStats("FCFS");
+	FCFS->printStats("SJF");
+	FCFS->printStats("SRT");
+	FCFS->printStats("RR");
+	
+	
 	
 	delete FCFS;
 	delete SJF;

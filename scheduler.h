@@ -86,6 +86,8 @@ class Scheduler {
 		unsigned long getTimer();
 		
 		void runSimulation(std::string algo);
+		
+		void printStats(std::string algo);
 };
 
 #endif
