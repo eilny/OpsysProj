@@ -12,7 +12,6 @@ enum eventType {
     , ioDone
     , arrival
     , tslice
-    , cswitch
 };
 
 struct Event {
@@ -50,7 +49,7 @@ class Scheduler {
         bool hasTimeSlice;
         unsigned int timeslice;
         unsigned int remainingtimeslice; // for detecting end of timeslice
-		unsigned int rraddbgn;
+		bool rraddbgn;
 
         bool useTau;
 		
@@ -66,16 +65,20 @@ class Scheduler {
 		void setAlgorithm(std::string algo);
 	
 	
+        void contextSwitchTime(bool switchIN);
         bool switchOUT();
         bool switchIN();
-        void contextSwitchTime(bool switchIN);
         void contextSwitch();
+
         void processArrival(Process * newProcess);
+
         void storeEventIfSooner(std::vector<Event> & events, unsigned int time, enum eventType type);
-        unsigned int nextEvent();
 		std::vector<Event> nextEvents();
+        
         bool advance();
+        void updateTimers(unsigned int deltaT);
         void fastForward(std::vector<Event> nxtEvnts);
+
 		unsigned long getTimer();
 		
 		void runSimulation(std::string algo);

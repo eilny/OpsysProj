@@ -43,7 +43,7 @@ void getProcessList(int seed, float lambda, int maxTime, std::vector<Process*> *
 		Process *temp = new Process(processName[i], arr, bursts, lambda, alpha);
 		for(int j = 0; j < bursts; j++){
 			temp->addBurst(ceil(getTime(lambda, maxTime)));
-			if( j == (bursts - 1)){
+			if ( j == (bursts - 1)){
 				break;
 			}
 			temp->addIo(ceil(getTime(lambda, maxTime)));
@@ -57,7 +57,7 @@ void getProcessList(int seed, float lambda, int maxTime, std::vector<Process*> *
 //Prints Starting Arrival list 
 void printArrivalList(std::vector<Process*> processes, int numProcess, float tau = 0){
 	for(int i = 0; i < numProcess; ++i){
-		if(tau != 0){
+		if (tau != 0){
 			fprintf(stdout, "Process %c [NEW] (arrival time %d ms) %d CPU bursts (tau %.0fms)\n"
 				, processes[i]->getId()
 				, processes[i]->getArrival()
@@ -100,12 +100,12 @@ int main( int argc, char ** argv) {
     // argv[7] - RR timeslice
     unsigned int timeslice = atoi(argv[7]);
     // argv[8] - rradd: place processes at beginning or end of queue
-	unsigned int rraddbgn = 0;
-	if(argc == 9){
+	bool rraddbgn;
+	if (argc == 9){
 		if (0 == strcmp("BEGINNING", argv[8])) {
-			rraddbgn = 1;
+			rraddbgn = true;
 		} else if (0 == strcmp("END", argv[8])) {
-			rraddbgn = 0;
+			rraddbgn = false;
 		} else {
 			fprintf(stderr, "USAGE: ./a.out <seed> <lambda> <upper bound> < number of processes> \
 					<context switch time (even)> <alpha > <RR time slice> <RR [BEGINNING|END]>\n");
