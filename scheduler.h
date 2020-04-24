@@ -59,6 +59,7 @@ class Scheduler {
         bool useTau;
 		
 		PrintState pState;
+		std::string algoUsed; 
 
     public:
 		//Constructor

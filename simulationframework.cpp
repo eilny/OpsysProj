@@ -143,14 +143,14 @@ int main( int argc, char ** argv) {
 	// printSimQ(baseProcesses);
 
 	// Test scheduler class construtor 
-	// Scheduler *sch = new Scheduler(baseProcesses, tcs, timeslice, rraddbgn);
-	// printArrivalList(*baseProcesses, nproc);
-	// sch->runSimulation("RR");
-	// printf("Scheduler: %lu\n", sch->getTimer());
-	// delete sch;
+	Scheduler *sch = new Scheduler(baseProcesses, tcs, timeslice, rraddbgn);
+	printArrivalList(*baseProcesses, nproc);
+	sch->runSimulation("SRT");
+	printf("Scheduler: %lu\n", sch->getTimer());
+	delete sch;
 	
 #endif
-	
+	/*
     // Run simulations
 	//FCFS
     Scheduler *FCFS = new Scheduler(baseProcesses, tcs, timeslice, rraddbgn);
@@ -189,9 +189,9 @@ int main( int argc, char ** argv) {
 	printf("\n");
 	// Stat Stuff
 	FCFS->printStats("FCFS");
-	FCFS->printStats("SJF");
-	FCFS->printStats("SRT");
-	FCFS->printStats("RR");
+	SJF->printStats("SJF");
+	SRT->printStats("SRT");
+	RR->printStats("RR");
 	
 	
 	
@@ -200,7 +200,7 @@ int main( int argc, char ** argv) {
 	delete SRT;
 	delete RR;
 	
-	
+	*/
 	delete baseProcesses;
 }
 

@@ -76,8 +76,11 @@ void printPreemptState(std::deque<Process*> *queue, Process* cur, PrintState pSt
 
 // Printing statements 
 // Needs to be modified for process class
-void printProcessState(PrintState p, int time, Process *cur
-        , std::deque<Process*> *queue, unsigned int tcs = 0, Process* newAdded = NULL) {
+void printProcessState(PrintState p, int time, Process *cur,
+						std::deque<Process*> *queue, 
+						std::string algoUsed = "", 
+						unsigned int tcs = 0, 
+						Process* newAdded = NULL) {
 	// Don't print past 1000ms 
 	// Commented out for testing
 	if (time > 1000 && p != TERMINATED) {
@@ -94,8 +97,14 @@ void printProcessState(PrintState p, int time, Process *cur
     }
     if (p == START) {
 		if (0 != cur->getTau()) {
-			printf("time %dms: Process %c (tau %.0fms) started using the CPU for %dms burst "
+			if(algoUsed == "SRT"){
+				printf("time %dms: Process %c (tau %.0fms) started using the CPU with %dms burst remaining "
                 , time, cur->getId(), cur->getTau(), cur->burstTimeLeft());
+			}
+			else{
+				printf("time %dms: Process %c (tau %.0fms) started using the CPU for %dms burst "
+                , time, cur->getId(), cur->getTau(), cur->burstTimeLeft());
+			}
 		} else {
 			printf("time %dms: Process %c started using the CPU for %dms burst "
                 , time, cur->getId(), cur->burstTimeLeft());
@@ -232,6 +241,7 @@ void Scheduler::setAlgorithm(std::string algo) {
 		perror("Error: Invalid Algorithm\n");
 		return; 	
 	}
+	algoUsed = algo;
 	setTauForAll(&ARRIVAL, useTau);
 	printf("time %dms: Simulator started for %s ", 0, algo.c_str());
 	printSimQ((&READY));
@@ -243,12 +253,14 @@ bool Scheduler::contextSwitchTime(bool swtIN) {
     //      again after completion of this one due to process finishing i/o or arriving
     //      with higher priority
     bool preemptAfter = false;
-
+    ++numCS;
     // advance timer here
     simulation_timer += tcs/2;
 
+
     if (RUNNING) {
     	RUNNING->turnA(tcs/2);
+
     }
 
     // this expects that the switched in process is no longer on READY
@@ -264,7 +276,7 @@ bool Scheduler::contextSwitchTime(bool swtIN) {
         	if (io->ioTimeLeft() == 0) {
         		// catch unhandled io
 				pState = IOCOMPLETED;
-				printProcessState(pState, simulation_timer, io, &READY);
+				printProcessState(pState, simulation_timer, io, &READY, algoUsed);
                 // PRINT HERE: time 92ms: Process A (tau 78ms) completed I/O; preempting B [Q A]
                 // PRINT HERE: time 4556ms: Process B (tau 121ms) completed I/O; added to ready queue [Q B]
 
@@ -367,7 +379,7 @@ bool Scheduler::contextSwitchTime(bool swtIN) {
             	}
                 // process arrives, add to READY
 				pState = ARRIVE;
-				printProcessState(pState, simulation_timer, arr, &READY);
+				printProcessState(pState, simulation_timer, arr, &READY, algoUsed);
                 // PRINT HERE: time 18ms: Process B (tau 100ms) arrived; added to ready queue [Q B]
 
                 READY.push_back(arr);
@@ -420,10 +432,10 @@ bool Scheduler::switchOUT() {
             // tslice must be 0 here
             if (!remainingtimeslice && READY.empty()) {
                 pState = TIMESLICE;
-                printProcessState(pState, simulation_timer, RUNNING, &READY);
+                printProcessState(pState, simulation_timer, RUNNING, &READY, algoUsed);
             } else {
                 pState = TIMESLICE;
-                printProcessState(pState, simulation_timer, RUNNING, &READY);
+                printProcessState(pState, simulation_timer, RUNNING, &READY, algoUsed);
 
                 contextSwitchTime(false);
 
@@ -431,7 +443,7 @@ bool Scheduler::switchOUT() {
             }
         } else if (isPreemptive) {
         	pState = PREEMPT;
-        	printProcessState(pState, simulation_timer, RUNNING, &READY);
+        	printProcessState(pState, simulation_timer, RUNNING, &READY, algoUsed);
 
             contextSwitchTime(false);
 
@@ -446,17 +458,17 @@ bool Scheduler::switchOUT() {
         if (RUNNING->getNumBurstsLeft()) {
             // more bursts = not done, move to I/O
 			pState = COMPLETED; 
-			printProcessState(pState , simulation_timer, RUNNING, &READY);
+			printProcessState(pState , simulation_timer, RUNNING, &READY, algoUsed);
 
             if (useTau) {
                 // recalculate tau before switching to i/o
                 RUNNING->recalculateTau();
 				pState = TAU;
-				printProcessState(pState, simulation_timer, RUNNING, &READY);
+				printProcessState(pState, simulation_timer, RUNNING, &READY, algoUsed);
             }
 
 			pState = BLOCK;
-			printProcessState(pState, simulation_timer, RUNNING, &READY, tcs);
+			printProcessState(pState, simulation_timer, RUNNING, &READY, algoUsed, tcs);
 
             contextSwitchTime(false);
 
@@ -466,7 +478,7 @@ bool Scheduler::switchOUT() {
         } else {
             // no more bursts, complete
 			pState = TERMINATED;
-			printProcessState(pState, simulation_timer, RUNNING, &READY);
+			printProcessState(pState, simulation_timer, RUNNING, &READY, algoUsed);
 
             COMPLETE.push_back(RUNNING);
 
@@ -500,7 +512,7 @@ bool Scheduler::switchIN() {
     preemptAfter = contextSwitchTime(true);
 
 	pState = START;
-	printProcessState(pState, simulation_timer, RUNNING, &READY);
+	printProcessState(pState, simulation_timer, RUNNING, &READY, algoUsed);
     burstTimeStart = simulation_timer; // burst starts after the time to switch in
     // can check if !RUNNING to see if we switched something in, but it won't catch the tslice failed to 
     //      swap out - although that's in switchOUT anyway
@@ -509,6 +521,9 @@ bool Scheduler::switchIN() {
 
 void Scheduler::contextSwitch() {
     ++numCS;
+	#ifdef DEBUG_MODE
+		printf("numCS %d\n", numCS);
+	#endif
 
     // SWITCH OUT
     if (switchOUT()) {
@@ -676,7 +691,7 @@ void Scheduler::fastForward(std::vector<Event> & nxtEvnts) {
                 }
 
 				pState = ARRIVE;
-				printProcessState(pState, simulation_timer, ARRIVAL.front(), &READY);
+				printProcessState(pState, simulation_timer, ARRIVAL.front(), &READY, algoUsed);
 
                 // sort if needed
                 if (useTau) {
@@ -831,10 +846,10 @@ void Scheduler::printStats(std::string algo) {
 	}
 
 	fprintf(sim_stats, "Algorithm %s\n", algo.c_str());
-	fprintf(sim_stats, "-- average CPU burst time: %.2f ms\n", avgburst);
-	fprintf(sim_stats, "-- average wait time: %.2f ms\n", avgwait);
-	fprintf(sim_stats, "-- average turnaround time: %.2f ms\n", avgturnaround);
-	fprintf(sim_stats, "-- total number of context switched: %u\n", numCS);
+	fprintf(sim_stats, "-- average CPU burst time: %.3f ms\n", avgburst);
+	fprintf(sim_stats, "-- average wait time: %.3f ms\n", avgwait);
+	fprintf(sim_stats, "-- average turnaround time: %.3f ms\n", avgturnaround);
+	fprintf(sim_stats, "-- total number of context switched: %d\n", numCS);
 	fprintf(sim_stats, "-- total number of preemptions: %u\n", preemptions);
 	
 	fclose(sim_stats);
