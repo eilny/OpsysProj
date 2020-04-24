@@ -136,21 +136,6 @@ int main( int argc, char ** argv) {
 	getProcessList(seed, lambda, upperbound, baseProcesses, nproc, alpha);
 	
 	
-	
-#ifdef DEBUG_MODE 
-	// Testing function 
-	// printArrivalList(baseProcesses, nproc);
-	// printSimQ(baseProcesses);
-
-	// Test scheduler class construtor 
-	Scheduler *sch = new Scheduler(baseProcesses, tcs, timeslice, rraddbgn);
-	printArrivalList(*baseProcesses, nproc);
-	sch->runSimulation("SRT");
-	printf("Scheduler: %lu\n", sch->getTimer());
-	delete sch;
-	
-#endif
-	/*
     // Run simulations
 	//FCFS
     Scheduler *FCFS = new Scheduler(baseProcesses, tcs, timeslice, rraddbgn);
@@ -200,7 +185,6 @@ int main( int argc, char ** argv) {
 	delete SRT;
 	delete RR;
 	
-	*/
 	delete baseProcesses;
 }
 

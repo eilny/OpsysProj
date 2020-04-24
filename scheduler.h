@@ -81,6 +81,9 @@ class Scheduler {
         void storeEventIfSooner(std::vector<Event> & events, unsigned int time, enum eventType type);
 		std::vector<Event> nextEvents();
         
+        bool simDone();
+        void statCollection();
+
         bool advance();
         void updateTimers(unsigned int deltaT);
         void fastForward(std::vector<Event> & nxtEvnts);
