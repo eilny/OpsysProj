@@ -63,13 +63,13 @@ void printPreemptState(std::deque<Process*> *queue, Process* cur, PrintState pSt
 	}
 	if (pState == PREEMPT) {
 		printf("Process %c (tau %.0fms) will preempt %c "
-                , (queue->front())->getId(), (queue->front())->getTau(), cur->getId());
+                , newAdded->getId(), newAdded->getTau(), cur->getId());
 	}
 	if (pState == IOPREEMPT) {
-		if (cur->getId() != newAdded->getId()) {
+		if (newAdded != NULL && cur->getId() == newAdded->getId()) {
 			printf("added to ready queue ");
 		} else {
-			printf("preempting %c ", cur->getId());
+			printf("preempting %c ", newAdded->getId());
 		}
 	}
 }
@@ -145,10 +145,10 @@ void printProcessState(PrintState p, int time, Process *cur,
 	if (p == IOPREEMPT) {
 		if (0 != cur->getTau()) {
             printf("time %dms: Process %c (tau %.0fms) completed I/O; "
-                    , time, newAdded->getId(), newAdded->getTau());
+                    , time, cur->getId(), cur->getTau());
         } else {
             printf("time %dms: Process %c completed I/O; "
-                    , time, newAdded->getId());
+                    , time, cur->getId());
         }
 		printPreemptState(queue, cur, p, newAdded);
 	}
@@ -328,8 +328,10 @@ bool Scheduler::contextSwitchTime(bool swtIN) {
                         // print 'will preempt' here, need to call switchIN again after
 
                         if (swtIN) {
-                            pState = PREEMPT;
-                            printProcessState(pState, simulation_timer, RUNNING, &READY);
+							if(algoUsed != "SRT"){
+								pState = PREEMPT;
+								printProcessState(pState, simulation_timer, RUNNING, &READY);
+							}
                             // PRINT HERE: time 405ms: Process A (tau 54ms) will preempt B [Q A]
                             preemptAfter = true;
                         }
@@ -442,9 +444,10 @@ bool Scheduler::switchOUT() {
                 READY.push_back(RUNNING);
             }
         } else if (isPreemptive) {
-        	pState = PREEMPT;
-        	printProcessState(pState, simulation_timer, RUNNING, &READY, algoUsed);
-
+			if(algoUsed != "SRT"){
+				pState = PREEMPT;
+				printProcessState(pState, simulation_timer, RUNNING, &READY, algoUsed);
+			}
             contextSwitchTime(false);
 
             READY.push_back(RUNNING);
@@ -668,14 +671,21 @@ void Scheduler::fastForward(std::vector<Event> & nxtEvnts) {
                 		&& READY.front() == BLOCKED.front()) {
                 	if (useTau && READY.front()->getTau() < RUNNING->getTau()) {
                 		// will preempt, print that here
+						
                 		sout = true;
                 		sin = true;
                 	}
                 }
-
-                // print i/o complete
-				pState = IOCOMPLETED;
-				printProcessState(pState, simulation_timer, BLOCKED.front(), &READY);
+				if(sout && sin){
+					pState = IOPREEMPT;
+					printProcessState(pState, simulation_timer, BLOCKED.front(), &READY, algoUsed, 0, RUNNING);
+					
+				}
+				else{
+					// print i/o complete
+					pState = IOCOMPLETED;
+					printProcessState(pState, simulation_timer, BLOCKED.front(), &READY);
+				}
 
 
                 // remove element from BLOCKED
