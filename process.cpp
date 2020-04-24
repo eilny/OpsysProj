@@ -181,6 +181,14 @@ void Process::waitTime(unsigned int deltaT) {
     wait_time += deltaT;
 }
 
+void Process::turnA(unsigned int deltaT) {
+    turnaround_time += deltaT;
+}
+
+void Process::turnAReset() {
+    turnaround_time = 0;
+}
+
 void Process::finishedCPUBurst() {
 	prevBurst = pristine_burst_times->at(pristine_burst_times->size() - burst_times->size());
     burst_times->erase(burst_times->begin());
@@ -188,8 +196,4 @@ void Process::finishedCPUBurst() {
 
 void Process::finishedIOBlock() {
     io_times->erase(io_times->begin());
-}
-
-void Process::setTurnAround(unsigned long runTimeEnd) {
-    turnaround_time = runTimeEnd - pristine_arrival_time;
 }

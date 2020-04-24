@@ -247,12 +247,8 @@ bool Scheduler::contextSwitchTime(bool swtIN) {
     // advance timer here
     simulation_timer += tcs/2;
 
-    if (swtIN) {
-        if (isPreemptive && !READY.empty()) {
-            pState = PREEMPT;
-           	printProcessState(pState, simulation_timer, RUNNING, &READY);
-            // PRINT HERE: time 405ms: Process A (tau 54ms) will preempt B [Q A]
-        }
+    if (RUNNING) {
+    	RUNNING->turnA(tcs/2);
     }
 
     // this expects that the switched in process is no longer on READY
@@ -281,23 +277,28 @@ bool Scheduler::contextSwitchTime(bool swtIN) {
                     std::sort(READY.begin(), READY.end(), sortByTau);
                 }
 
-                if (isPreemptive && swtIN) {
-                    if (RUNNING && !READY.empty()
-                            && READY.front()->getTau() < RUNNING->getTau()) {
+                if (isPreemptive && RUNNING && !READY.empty()) {
+                    if (useTau && READY.front()->getTau() < RUNNING->getTau()) {
                         // print 'will preempt' here, need to call switchIN again after
-                        preemptAfter = true;
+
+                        if (swtIN) {
+                            pState = PREEMPT;
+                            printProcessState(pState, simulation_timer, RUNNING, &READY);
+                            // PRINT HERE: time 405ms: Process A (tau 54ms) will preempt B [Q A]
+                            preemptAfter = true;
+                        }
                     }
                 }
                 continue; // don't underflow or try to decrement io any more
-        	}
+            }
             if (io->doIO(1)) {
-            	if (i == tcs/2) {
-            		// don't print, need to print after next process is switched in
-            		continue;
-            	}
+                if (i == tcs/2) {
+                    // don't print, need to print after next process is switched in
+                    continue;
+                }
                 // return to READY
-				pState = IOCOMPLETED;
-				printProcessState(pState, simulation_timer, io, &READY);
+                pState = IOCOMPLETED;
+                printProcessState(pState, simulation_timer, io, &READY);
                 // PRINT HERE: time 92ms: Process A (tau 78ms) completed I/O; preempting B [Q A]
                 // PRINT HERE: time 4556ms: Process B (tau 121ms) completed I/O; added to ready queue [Q B]
 
@@ -310,11 +311,16 @@ bool Scheduler::contextSwitchTime(bool swtIN) {
                     std::sort(READY.begin(), READY.end(), sortByTau);
                 }
 
-                if (isPreemptive && swtIN) {
-                    if (RUNNING && !READY.empty()
-                            && READY.front()->getTau() < RUNNING->getTau()) {
+                if (isPreemptive && RUNNING && !READY.empty()) {
+                    if (useTau && READY.front()->getTau() < RUNNING->getTau()) {
                         // print 'will preempt' here, need to call switchIN again after
-                        preemptAfter = true;
+
+                        if (swtIN) {
+                            pState = PREEMPT;
+                            printProcessState(pState, simulation_timer, RUNNING, &READY);
+                            // PRINT HERE: time 405ms: Process A (tau 54ms) will preempt B [Q A]
+                            preemptAfter = true;
+                        }
                     }
                 }
                 continue; // don't underflow or try to decrement io any more
@@ -340,11 +346,16 @@ bool Scheduler::contextSwitchTime(bool swtIN) {
                     std::sort(READY.begin(), READY.end(), sortByTau);
                 }
 
-                if (isPreemptive && swtIN) {
-                    if (RUNNING && !READY.empty()
-                            && READY.front()->getTau() < RUNNING->getTau()) {
+                if (isPreemptive && RUNNING && !READY.empty()) {
+                    if (useTau && READY.front()->getTau() < RUNNING->getTau()) {
                         // print 'will preempt' here, need to call switchIN again after
-                        preemptAfter = true;
+
+                        if (swtIN) {
+                            pState = PREEMPT;
+                            printProcessState(pState, simulation_timer, RUNNING, &READY);
+                            // PRINT HERE: time 405ms: Process A (tau 54ms) will preempt B [Q A]
+                            preemptAfter = true;
+                        }
                     }
                 }
                 continue; // don't underflow or try to decrement arr any more
@@ -366,11 +377,16 @@ bool Scheduler::contextSwitchTime(bool swtIN) {
                     std::sort(READY.begin(), READY.end(), sortByTau);
                 }
 
-                if (isPreemptive && swtIN) {
-                    if (RUNNING && !READY.empty()
-                            && READY.front()->getTau() < RUNNING->getTau()) {
+                if (isPreemptive && RUNNING && !READY.empty()) {
+                    if (useTau && READY.front()->getTau() < RUNNING->getTau()) {
                         // print 'will preempt' here, need to call switchIN again after
-                        preemptAfter = true;
+
+                        if (swtIN) {
+                            pState = PREEMPT;
+                            printProcessState(pState, simulation_timer, RUNNING, &READY);
+                            // PRINT HERE: time 405ms: Process A (tau 54ms) will preempt B [Q A]
+                            preemptAfter = true;
+                        }
                     }
                 }
                 continue;
@@ -398,7 +414,6 @@ bool Scheduler::switchOUT() {
         // preemption, not done
         // move to READY
         ++preemptions;
-        READY.push_back(RUNNING);
 
         // tslice or preempted
         if (hasTimeSlice) {
@@ -425,6 +440,9 @@ bool Scheduler::switchOUT() {
     } else {
         // finished burst
         RUNNING->finishedCPUBurst();
+        TURNAROUND.push_back(RUNNING->getTurnaround());
+        RUNNING->turnAReset();
+
         if (RUNNING->getNumBurstsLeft()) {
             // more bursts = not done, move to I/O
 			pState = COMPLETED; 
@@ -450,7 +468,6 @@ bool Scheduler::switchOUT() {
 			pState = TERMINATED;
 			printProcessState(pState, simulation_timer, RUNNING, &READY);
 
-            RUNNING->setTurnAround(simulation_timer);
             COMPLETE.push_back(RUNNING);
 
             contextSwitchTime(false);
@@ -582,6 +599,7 @@ void Scheduler::updateTimers(unsigned int deltaT) {
     // cpu burst
     if (RUNNING) {
         RUNNING->doWork(deltaT);
+        RUNNING->turnA(deltaT);
     }
 
     // wait times
@@ -605,6 +623,11 @@ void Scheduler::fastForward(std::vector<Event> & nxtEvnts) {
 
     updateTimers(nxtEvnts[0].timeToEvent);
 
+    Process * runstart = RUNNING;
+
+    bool sout = false;
+    bool sin = false;
+
     // updated time, handle the incoming events
     for (const Event& evnt : nxtEvnts) {
         // this requires that nextEvents really has everything covered
@@ -612,7 +635,7 @@ void Scheduler::fastForward(std::vector<Event> & nxtEvnts) {
 
             case burstDone:
                 // CPU burst finished, switch OUT
-                switchOUT();
+                sout = true;
                 break;
 
             case ioDone:
@@ -620,21 +643,25 @@ void Scheduler::fastForward(std::vector<Event> & nxtEvnts) {
                 BLOCKED.front()->finishedIOBlock();
                 READY.push_back(BLOCKED.front());
 
-                // print i/o complete
-				pState = IOCOMPLETED;
-				printProcessState(pState, simulation_timer, BLOCKED.front(), &READY);
-
                 // sort if needed
                 if (useTau) {
                     std::sort(READY.begin(), READY.end(), sortByTau);
                 }
 
                 // would it preempt?
-                if (isPreemptive && useTau && RUNNING
-                        && READY.front() == BLOCKED.front()
-                        && READY.front()->getTau() < RUNNING->getTau()) {
-                    // will preempt, print that here
+                if (isPreemptive && RUNNING
+                		&& READY.front() == BLOCKED.front()) {
+                	if (useTau && READY.front()->getTau() < RUNNING->getTau()) {
+                		// will preempt, print that here
+                		sout = true;
+                		sin = true;
+                	}
                 }
+
+                // print i/o complete
+				pState = IOCOMPLETED;
+				printProcessState(pState, simulation_timer, BLOCKED.front(), &READY);
+
 
                 // remove element from BLOCKED
                 BLOCKED.pop_front();
@@ -657,10 +684,13 @@ void Scheduler::fastForward(std::vector<Event> & nxtEvnts) {
                 }
 
                 // would it preempt?
-                if (isPreemptive && useTau && RUNNING
-                        && READY.front() == ARRIVAL.front()
-                        && READY.front()->getTau() < RUNNING->getTau()) {
-                    // will preempt, print that here
+                if (isPreemptive && RUNNING
+                		&& READY.front() == ARRIVAL.front()) {
+                	if (useTau && READY.front()->getTau() < RUNNING->getTau()) {
+                		// will preempt, print that here
+                		sout = true;
+                		sin = true;
+                	}
                 }
 
                 // remove element from ARRIVAL
@@ -670,17 +700,22 @@ void Scheduler::fastForward(std::vector<Event> & nxtEvnts) {
             case tslice:
                 // preemptive by nature
                 if (!RUNNING) {
+                    // nothing RUNNING, swap in?
                     if (!READY.empty()) {
                         // no preemption
                     } else {
                         // preempt
+                    	sin = true;
                     }
                 } else {
-                    // nothing RUNNING, swap in?
+                	// running process
                     if (!READY.empty()) {
-                        switchIN();
+                    	// will preempt here
+                    	sout = true;
+                    	sin = true;
                     } else {
-                        // nothing happening at all....
+                        // nothing on READY, don't preempt
+                    	// print here?
                     }
                 }
 
@@ -690,13 +725,32 @@ void Scheduler::fastForward(std::vector<Event> & nxtEvnts) {
         }
     }
 
+    if (sout && sin) {
+    	++numCS;
+    	// change this if when switched out and not finished with burst
+    	//++preemptions;
+    }
+
+    if (sout) {
+    	switchOUT();
+    }
+    if (sin) {
+    	switchIN();
+    }
+
     if (!RUNNING) {
        switchIN();
-    } else if (isPreemptive && useTau && !READY.empty()) {
-        if (READY.front()->getTau() < RUNNING->getTau()) {
+    } else if (isPreemptive && !READY.empty()) {
+        if (useTau && READY.front()->getTau() < RUNNING->getTau()) {
             // preempt
             switchIN();
+        } else if (hasTimeSlice) {
+        	switchIN();
         }
+    }
+
+    if (runstart != RUNNING && RUNNING != NULL) {
+    	++numCS;
     }
 
     return;
@@ -720,10 +774,8 @@ bool Scheduler::advance() {
             unsigned int nproc = COMPLETE.size();
             for (Process * cmp : COMPLETE) {
                 avgwait += (float)cmp->getWaitTime();
-                avgturnaround += (float)cmp->getTurnaround();
             }
             avgwait /= nproc;
-            avgturnaround /= nproc;
         }
 
         if (BURSTS.size()) { // not super necessary, but just for safety
@@ -731,6 +783,13 @@ bool Scheduler::advance() {
                 avgburst += btime;
             }
             avgburst /= BURSTS.size();
+        }
+
+        if (TURNAROUND.size()) { // not super necessary, but just for safety
+            for (unsigned int ta : TURNAROUND) {
+                avgturnaround += ta;
+            }
+            avgturnaround /= TURNAROUND.size();
         }
 
 		return false;
@@ -750,7 +809,6 @@ bool Scheduler::advance() {
 
 unsigned long Scheduler::getTimer() {
     return this->simulation_timer;
-
 }
 
 void Scheduler::runSimulation(std::string algo) {
@@ -776,8 +834,8 @@ void Scheduler::printStats(std::string algo) {
 	fprintf(sim_stats, "-- average CPU burst time: %.2f ms\n", avgburst);
 	fprintf(sim_stats, "-- average wait time: %.2f ms\n", avgwait);
 	fprintf(sim_stats, "-- average turnaround time: %.2f ms\n", avgturnaround);
-	fprintf(sim_stats, "-- total number of context switched: %d\n", numCS);
-	fprintf(sim_stats, "-- total number of preemptions: %ud\n", preemptions);
+	fprintf(sim_stats, "-- total number of context switched: %u\n", numCS);
+	fprintf(sim_stats, "-- total number of preemptions: %u\n", preemptions);
 	
 	fclose(sim_stats);
 	

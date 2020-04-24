@@ -77,7 +77,8 @@ class Process {
         void finishedCPUBurst();
         void finishedIOBlock();
 
-        void setTurnAround(unsigned long runTimeEnd);
+        void turnA(unsigned int deltaT);
+        void turnAReset();
 
 };
 #endif
