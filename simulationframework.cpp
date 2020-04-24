@@ -58,20 +58,33 @@ void getProcessList(int seed, float lambda, int maxTime, std::vector<Process*> *
 void printArrivalList(std::vector<Process*> processes, int numProcess, float tau = 0){
 	for(int i = 0; i < numProcess; ++i){
 		if (tau != 0){
-			fprintf(stdout, "Process %c [NEW] (arrival time %d ms) %d CPU bursts (tau %.0fms)\n"
-				, processes[i]->getId()
-				, processes[i]->getArrival()
-				, processes[i]->getNumBursts()
-				, tau);
+			if(processes[i]->getNumBursts() == 1){
+				fprintf(stdout, "Process %c [NEW] (arrival time %d ms) %d CPU burst (tau %.0fms)\n"
+					, processes[i]->getId()
+					, processes[i]->getArrival()
+					, processes[i]->getNumBursts()
+					, tau);
+			}else{
+				fprintf(stdout, "Process %c [NEW] (arrival time %d ms) %d CPU bursts (tau %.0fms)\n"
+					, processes[i]->getId()
+					, processes[i]->getArrival()
+					, processes[i]->getNumBursts()
+					, tau);
+			}
 		}
 		else{
-			fprintf(stdout, "Process %c [NEW] (arrival time %d ms) %d CPU bursts\n"
+			fprintf(stdout, "Process %c [NEW] (arrival time %d ms) %d CPU "
 				, processes[i]->getId()
 				, processes[i]->getArrival()
 				, processes[i]->getNumBursts());
+			if(processes[i]->getNumBursts() > 1){
+				printf("bursts\n");
+			}else{
+				printf("burst\n");
+			}
 		}
 	}
-	
+	fflush(stdout);
 }
 
 
@@ -184,6 +197,7 @@ int main( int argc, char ** argv) {
 	delete SJF;
 	delete SRT;
 	delete RR;
+
 	
 	delete baseProcesses;
 }
