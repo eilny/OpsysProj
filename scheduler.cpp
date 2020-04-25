@@ -17,10 +17,12 @@ bool sortByArrvial(Process* a, Process* b) {
 }
 
 bool sortByTau(Process* a, Process* b) {
-    if (a->getTau() == b->getTau()) {
+    //if (a->getTau() == b->getTau()) {
+    if (a->tauEffective() == b->tauEffective()) {
         return (a->getId() < b->getId());
     }
-    return (a->getTau() < b->getTau());
+    //return (a->getTau() < b->getTau());
+    return (a->tauEffective() < b->tauEffective());
 }
 
 bool sortByIOTimeLeft(Process* a, Process* b) {
@@ -461,13 +463,14 @@ bool Scheduler::switchOUT(bool forcePrint) {
                 READY.push_back(RUNNING);
             }
         } else if (isPreemptive && useTau) {
-            if(forcePrint){
+            if (forcePrint) {
                 pState = PREEMPT;
                 printProcessState(pState, simulation_timer, RUNNING, &READY, algoUsed, 0, READY.front());
             }
             contextSwitchTime(false);
 
             READY.push_back(RUNNING);
+            std::sort(READY.begin(), READY.end(), sortByTau);
         }
     } else {
         // finished burst

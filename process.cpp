@@ -168,6 +168,11 @@ void Process::setTau(bool useTau){
 }
 
 float Process::tauEffective() {
+    if (burst_times->size() == 0) {
+        // can't give tau for something that is completed
+        // don't want anything to preempt something that is terminating
+        return 0;
+    }
 	unsigned int proctime = pristine_burst_times->at(pristine_burst_times->size() - burst_times->size());
 	proctime -= burstTimeLeft();
 	return (this->tau - proctime);
