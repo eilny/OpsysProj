@@ -18,10 +18,10 @@ class Process {
 
         unsigned long turnaround_time;
         unsigned long wait_time;
-		
-		float tau;
-		float alpha;
-		unsigned int prevBurst; 
+
+        float tau;
+        float alpha;
+        unsigned int prevBurst; 
 
         std::vector<unsigned int> * burst_times;
         std::vector<unsigned int> * io_times;
@@ -32,34 +32,34 @@ class Process {
         std::vector<unsigned int> * pristine_burst_times;
         std::vector<unsigned int> * pristine_io_times;
 
-		State state;
+        State state;
 
-	public:
-	//Get & Set functions for accessing the variables 	
+    public:
+        //Get & Set functions for accessing the variables 	
         Process(char pid, unsigned int arr, unsigned int processed, float lambda, float alp);
-		Process(const Process &p);
+        Process(const Process &p);
         ~Process();
         void contextSwitch(bool switch_in);
-		void addBurst(unsigned int time);
-		void addIo(unsigned int time);
-		
-		char getId();
-		unsigned int getArrival();
-		unsigned int getNumBursts();
+        void addBurst(unsigned int time);
+        void addIo(unsigned int time);
 
-		unsigned int getNumBurstsLeft();
-		unsigned int getNumIOLeft();
+        char getId();
+        unsigned int getArrival();
+        unsigned int getNumBursts();
 
-		float getTau();
-		float getAlpha(){return alpha;}
-		unsigned long getTurnaround(){return turnaround_time;}
-		unsigned long getWaitTime(){return wait_time;}
-		unsigned int getPristineArrival(){return pristine_arrival_time;}
+        unsigned int getNumBurstsLeft();
+        unsigned int getNumIOLeft();
+
+        float getTau();
+        float getAlpha(){return alpha;}
+        unsigned long getTurnaround(){return turnaround_time;}
+        unsigned long getWaitTime(){return wait_time;}
+        unsigned int getPristineArrival(){return pristine_arrival_time;}
         std::vector<unsigned int> * getPristineBurst(){return pristine_burst_times;}
         std::vector<unsigned int> * getPristineIo(){return pristine_io_times;}
-		std::vector<unsigned int> * getBurstTimes(){return burst_times;}
+        std::vector<unsigned int> * getBurstTimes(){return burst_times;}
         std::vector<unsigned int> * getIoTimes(){return io_times;}
-		
+
 
         State setState(State newstate);
         unsigned int burstTimeLeft();
@@ -69,9 +69,9 @@ class Process {
         bool doIO(unsigned int deltaT);
         bool advanceArrival(unsigned int deltaT);
 
-		void recalculateTau();
-		void setTau(bool useTau);
-		float tauEffective();
+        void recalculateTau();
+        void setTau(bool useTau);
+        float tauEffective();
 
         void waitTime(unsigned int deltaT);
 
@@ -80,6 +80,7 @@ class Process {
 
         void turnA(unsigned int deltaT);
         void turnAReset();
+        bool isMidBurst();
 
 };
 #endif

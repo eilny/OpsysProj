@@ -184,7 +184,6 @@ int main( int argc, char ** argv) {
 	//RR
 	Scheduler *RR = new Scheduler(baseProcesses, tcs, timeslice, rraddbgn);
 	RR->runSimulation("RR");
-	printf("\n");
 	// Stat Stuff
 	FCFS->printStats("FCFS");
 	SJF->printStats("SJF");

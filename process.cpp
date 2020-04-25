@@ -4,15 +4,6 @@
 #include "process.h"
 
 
-
-void copyVector(std::vector<unsigned int>* newVec, std::vector<unsigned int>* oldVec){
-	for(unsigned int i = 0; i < oldVec->size(); i++){
-		newVec->push_back(oldVec->at(i));
-	}
-	
-}
-
-
 Process::Process( char pid, unsigned int arr
         , unsigned int nbursts, float lambda, float alp)
     : process_ID(pid)
@@ -201,4 +192,8 @@ void Process::finishedCPUBurst() {
 
 void Process::finishedIOBlock() {
     io_times->erase(io_times->begin());
+}
+
+bool Process::isMidBurst() {
+	return ( pristine_burst_times->at(pristine_burst_times->size() - burst_times->size()) != burstTimeLeft() );
 }
