@@ -4,7 +4,6 @@
 #include <deque>
 #include <algorithm> 
 #include <string>
-#
 
 #include "scheduler.h"
 
@@ -286,7 +285,7 @@ bool Scheduler::contextSwitchTime(bool swtIN) {
                 }
 
                 if (isPreemptive && RUNNING && !READY.empty()) {
-                    if (useTau && READY.front()->getTau() < RUNNING->getTau()) {
+                    if (useTau && READY.front()->getTau() < RUNNING->tauEffective()) {
                         // print 'will preempt' here, need to call switchIN again after
 
                         if (swtIN) {
@@ -320,7 +319,7 @@ bool Scheduler::contextSwitchTime(bool swtIN) {
                 }
 
                 if (isPreemptive && RUNNING && !READY.empty()) {
-                    if (useTau && READY.front()->getTau() < RUNNING->getTau()) {
+                    if (useTau && READY.front()->getTau() < RUNNING->tauEffective()) {
                         // print 'will preempt' here, need to call switchIN again after
 
                         if (swtIN) {
@@ -357,7 +356,7 @@ bool Scheduler::contextSwitchTime(bool swtIN) {
                 }
 
                 if (isPreemptive && RUNNING && !READY.empty()) {
-                    if (useTau && READY.front()->getTau() < RUNNING->getTau()) {
+                    if (useTau && READY.front()->getTau() < RUNNING->tauEffective()) {
                         // print 'will preempt' here, need to call switchIN again after
 
                         if (swtIN) {
@@ -388,7 +387,7 @@ bool Scheduler::contextSwitchTime(bool swtIN) {
                 }
 
                 if (isPreemptive && RUNNING && !READY.empty()) {
-                    if (useTau && READY.front()->getTau() < RUNNING->getTau()) {
+                    if (useTau && READY.front()->getTau() < RUNNING->tauEffective()) {
                         // print 'will preempt' here, need to call switchIN again after
 
                         if (swtIN) {
@@ -522,24 +521,28 @@ bool Scheduler::switchIN() {
     return preemptAfter;
 }
 
-void Scheduler::contextSwitch() {
+void Scheduler::contextSwitch(bool swo, bool swi) {
     ++numCS;
 	#ifdef DEBUG_MODE
 		printf("numCS %d\n", numCS);
 	#endif
 
     // SWITCH OUT
-    if (switchOUT()) {
-        // do we need to do anything if something is or is not switched out?
-    }
+	if (swo) {
+		if (switchOUT()) {
+			// do we need to do anything if something is or is not switched out?
+		}
+	}
 
     // SWITCH IN
-    if (switchIN()) {
-        // calls contextSwitchTime inside to print 'started using CPU' after C/S in
-        // need to process if something was supposed to preempt but could not because switch IN began
-        contextSwitch();
-        return;
-    }
+	if (swi) {
+		if (switchIN()) {
+			// calls contextSwitchTime inside to print 'started using CPU' after C/S in
+			// need to process if something was supposed to preempt but could not because switch IN began
+			contextSwitch();
+			return;
+		}
+	}
 
     if (hasTimeSlice) {
         remainingtimeslice = timeslice;
@@ -609,15 +612,15 @@ std::vector<Event> Scheduler::nextEvents() {
 void Scheduler::updateTimers(unsigned int deltaT) {
     simulation_timer += deltaT;
 
-    if (hasTimeSlice) {
-        // if timeslice based, less time in slice left
-        remainingtimeslice -= deltaT;
-    }
-
     // cpu burst
     if (RUNNING) {
         RUNNING->doWork(deltaT);
         RUNNING->turnA(deltaT);
+
+        if (hasTimeSlice) {
+        	// if timeslice based, less time in slice left
+        	remainingtimeslice -= deltaT;
+        }
     }
 
     // wait times
@@ -645,7 +648,7 @@ void Scheduler::fastForward(std::vector<Event> & nxtEvnts) {
 
     bool sout = false;
     bool sin = false;
-
+    bool gotTSlice = false;
     // updated time, handle the incoming events
     for (const Event& evnt : nxtEvnts) {
         // this requires that nextEvents really has everything covered
@@ -669,7 +672,7 @@ void Scheduler::fastForward(std::vector<Event> & nxtEvnts) {
                 // would it preempt?
                 if (isPreemptive && RUNNING
                 		&& READY.front() == BLOCKED.front()) {
-                	if (useTau && READY.front()->getTau() < RUNNING->getTau()) {
+                	if (useTau && READY.front()->getTau() < RUNNING->tauEffective()) {
                 		// will preempt, print that here
 						
                 		sout = true;
@@ -711,7 +714,7 @@ void Scheduler::fastForward(std::vector<Event> & nxtEvnts) {
                 // would it preempt?
                 if (isPreemptive && RUNNING
                 		&& READY.front() == ARRIVAL.front()) {
-                	if (useTau && READY.front()->getTau() < RUNNING->getTau()) {
+                	if (useTau && READY.front()->getTau() < RUNNING->tauEffective()) {
                 		// will preempt, print that here
                 		sout = true;
                 		sin = true;
@@ -726,18 +729,20 @@ void Scheduler::fastForward(std::vector<Event> & nxtEvnts) {
                 // preemptive by nature
                 if (!RUNNING) {
                     // nothing RUNNING, swap in?
-                    if (!READY.empty()) {
+//                    if (!READY.empty()) {
                         // no preemption
-                    } else {
+ //                   } else {
                         // preempt
                     	sin = true;
-                    }
+                    	gotTSlice = true;
+  //                  }
                 } else {
                 	// running process
                     if (!READY.empty()) {
                     	// will preempt here
                     	sout = true;
                     	sin = true;
+                    	gotTSlice = true;
                     } else {
                         // nothing on READY, don't preempt
                     	// print here?
@@ -750,22 +755,17 @@ void Scheduler::fastForward(std::vector<Event> & nxtEvnts) {
         }
     }
 
-    if (sout && sin) {
-    	++numCS;
-    	// change this if when switched out and not finished with burst
-    	//++preemptions;
-    }
-
+    /*
     if (sout) {
     	switchOUT();
     }
     if (!RUNNING) {
        sin = true;
     } else if (isPreemptive && !READY.empty()) {
-        if (useTau && READY.front()->getTau() < RUNNING->getTau()) {
+        if (useTau && READY.front()->getTau() < RUNNING->tauEffective()) {
             // preempt
             sin = true;
-        } else if (hasTimeSlice) {
+        } else if (hasTimeSlice && gotTSlice) {
         	sin = true;
         }
     }
@@ -775,6 +775,8 @@ void Scheduler::fastForward(std::vector<Event> & nxtEvnts) {
     		contextSwitch();
     	}
     }
+    */
+    contextSwitch(sout, sin);
 
 
     if (runstart != RUNNING && RUNNING != NULL) {

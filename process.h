@@ -20,6 +20,7 @@ class Process {
         unsigned long wait_time;
 		
 		float tau;
+		float taueff;
 		float alpha;
 		unsigned int prevBurst; 
 
@@ -71,6 +72,7 @@ class Process {
 
 		void recalculateTau();
 		void setTau(bool useTau);
+		float tauEffective();
 
         void waitTime(unsigned int deltaT);
 
