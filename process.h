@@ -20,7 +20,6 @@ class Process {
         unsigned long wait_time;
 		
 		float tau;
-		float taueff;
 		float alpha;
 		unsigned int prevBurst; 
 

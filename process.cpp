@@ -161,7 +161,6 @@ bool Process::doIO(unsigned int deltaT) {
 
 void Process::recalculateTau(){
 	this->tau = std::ceil((this->alpha*this->prevBurst) +  ((1-this->alpha)*(this->tau)));
-	this->taueff = this->tau;
 }
 
 bool Process::advanceArrival(unsigned int deltaT) {
@@ -180,7 +179,7 @@ void Process::setTau(bool useTau){
 float Process::tauEffective() {
 	unsigned int proctime = pristine_burst_times->at(pristine_burst_times->size() - burst_times->size());
 	proctime -= burstTimeLeft();
-	return (this->taueff - proctime);
+	return (this->tau - proctime);
 }
 
 void Process::waitTime(unsigned int deltaT) {
