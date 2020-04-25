@@ -539,7 +539,7 @@ void Scheduler::contextSwitch(bool swo, bool swi) {
 		if (switchIN()) {
 			// calls contextSwitchTime inside to print 'started using CPU' after C/S in
 			// need to process if something was supposed to preempt but could not because switch IN began
-			contextSwitch();
+			contextSwitch(true, true);
 			return;
 		}
 	}
@@ -649,6 +649,7 @@ void Scheduler::fastForward(std::vector<Event> & nxtEvnts) {
     bool sout = false;
     bool sin = false;
     bool gotTSlice = false;
+
     // updated time, handle the incoming events
     for (const Event& evnt : nxtEvnts) {
         // this requires that nextEvents really has everything covered
@@ -755,7 +756,6 @@ void Scheduler::fastForward(std::vector<Event> & nxtEvnts) {
         }
     }
 
-    /*
     if (sout) {
     	switchOUT();
     }
@@ -772,11 +772,9 @@ void Scheduler::fastForward(std::vector<Event> & nxtEvnts) {
     if (sin) {
     	if (switchIN()) {
     		// supposed to preempt if switchIN ret true
-    		contextSwitch();
+    		contextSwitch(true, true);
     	}
     }
-    */
-    contextSwitch(sout, sin);
 
 
     if (runstart != RUNNING && RUNNING != NULL) {

@@ -74,7 +74,7 @@ class Scheduler {
         bool contextSwitchTime(bool switchIN);
         bool switchOUT();
         bool switchIN();
-        void contextSwitch();
+        void contextSwitch(bool swo, bool swi);
 
         void processArrival(Process * newProcess);
 
