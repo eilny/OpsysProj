@@ -518,9 +518,6 @@ bool Scheduler::switchIN() {
         return false;
     }
 
-    // something is supposed to preempt after, need to call contextSwitch again
-    preemptAfter = contextSwitchTime(true);
-
     if (!RUNNING) {
         RUNNING = READY.front();
         READY.pop_front();
@@ -529,6 +526,9 @@ bool Scheduler::switchIN() {
     if (hasTimeSlice) {
         remainingtimeslice = timeslice;
     }
+
+    // something is supposed to preempt after, need to call contextSwitch again
+    preemptAfter = contextSwitchTime(true);
 
     pState = START;
     printProcessState(pState, simulation_timer, RUNNING, &READY, algoUsed);
