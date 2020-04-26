@@ -662,9 +662,9 @@ bool Scheduler::switchOUT(bool forcePrint) {
             pState = TERMINATED;
             printProcessState(pState, simulation_timer, RUNNING, &READY, algoUsed);
 
-            COMPLETE.push_back(RUNNING);
-
             contextSwitchTime(false);
+
+            COMPLETE.push_back(RUNNING);
         }
         // handle turnaround after tcs out
     }
