@@ -518,6 +518,8 @@ bool Scheduler::switchOUT(bool forcePrint) {
     }
     TURNAROUND.push_back(RUNNING->getTurnaround());
     RUNNING->turnAReset();
+	WAIT.push_back(RUNNING->getWaitTime());
+	RUNNING->resetWait();
     RUNNING = NULL;
     return true;
 }
@@ -836,12 +838,12 @@ void Scheduler::statCollection() {
     // preemptions and numCS should already be handled
 
     // calculate avg wait
-    if (COMPLETE.size()) {
-        unsigned int nproc = COMPLETE.size();
-        for (Process * cmp : COMPLETE) {
-            avgwait += (float)cmp->getWaitTime();
+    if (WAIT.size()) {
+        // unsigned int nproc = COMPLETE.size();
+        for (unsigned int wTime: WAIT) {
+            avgwait += wTime;
         }
-        avgwait /= nproc;
+		avgwait /= WAIT.size();
     }
 
     if (BURSTS.size()) { // not super necessary, but just for safety
