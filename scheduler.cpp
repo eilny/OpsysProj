@@ -56,12 +56,15 @@ void printSimQ(std::deque<Process*> *queue, std::string* outputBuff = NULL) {
 	else{
 		char buff[500];
 		sprintf(buff,"[Q");
+		outputBuff->append(buff);
 		if (queue->empty()) {
 			sprintf(buff, " <empty>]\n");
+			outputBuff->append(buff);
 			return;
 		}
 		for(unsigned int i = 0; i < queue->size(); ++i) {
 			sprintf(buff," %c", (*queue)[i]->getId());
+			outputBuff->append(buff);
 		}
 		sprintf(buff,"]\n");
 		outputBuff->append(buff);
