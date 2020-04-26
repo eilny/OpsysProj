@@ -60,7 +60,6 @@ class Scheduler {
 		
 		PrintState pState;
 		std::string algoUsed; 
-		std::vector<std::string> printBuffer;
 
     public:
 		//Constructor
@@ -72,7 +71,7 @@ class Scheduler {
 		void setAlgorithm(std::string algo);
 	
 	
-        bool contextSwitchTime(bool switchIN);
+        bool contextSwitchTime(bool switchIN, bool moveToRdy = false);
         bool switchOUT(bool forcePrint = false);
         bool switchIN();
         void contextSwitch(bool swo, bool swi, bool forcePrint = false);
