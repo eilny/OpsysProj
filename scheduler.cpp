@@ -127,9 +127,7 @@ void printProcessState(PrintState p, int time, Process *cur,
         unsigned int tcs = 0, 
         Process* newAdded = NULL,
 		std::vector<std::string>* outBuff = NULL) {
-#ifdef P1000
-    // Don't print past 1000ms 
-    // Commented out for testing
+#ifndef PRINTALL
     if (time >= 1000 && p != TERMINATED) {
         return;
     }
@@ -615,13 +613,18 @@ bool Scheduler::switchOUT(bool forcePrint) {
 
                 contextSwitchTime(false);
 
-                READY.push_back(RUNNING);
+                if (rraddbgn) {
+                    READY.push_front(RUNNING);
+                } else {
+                    READY.push_back(RUNNING);
+                }
             }
         } else if (isPreemptive && useTau) {
             if (forcePrint) {
                 pState = PREEMPT;
                 printProcessState(pState, simulation_timer, RUNNING, &READY, algoUsed, 0, READY.front());
             }
+
             contextSwitchTime(false);
 
             READY.push_back(RUNNING);
@@ -814,7 +817,6 @@ void Scheduler::updateTimers(unsigned int deltaT) {
     for (Process* p: ARRIVAL) {
         p->advanceArrival(deltaT);
     }
-
 }
 
 void Scheduler::fastForward(std::vector<Event> & nxtEvnts) {
