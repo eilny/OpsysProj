@@ -737,7 +737,7 @@ void Scheduler::fastForward(std::vector<Event> & nxtEvnts) {
 					break;
 
                 // add to READY
-                if (rraddbgn) {
+                if (rraddbgn && hasTimeSlice) {
                     READY.push_front(ARRIVAL.front());
                 } else {
                     READY.push_back(ARRIVAL.front());
