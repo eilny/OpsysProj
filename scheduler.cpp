@@ -733,7 +733,7 @@ void Scheduler::fastForward(std::vector<Event> & nxtEvnts) {
                 break;
 
             case arrival:
-				if (ARRIVAL.front()->getArrival())
+				if (ARRIVAL.empty() ||ARRIVAL.front()->getArrival())
 					break;
 
                 // add to READY
@@ -908,7 +908,9 @@ void Scheduler::printStats(std::string algo) {
         perror("ERROR: Could not open file simout.txt");
         exit(1);
     }
-
+	#ifdef DEBUG_MODE 
+		fprintf(sim_stats, "Processes: %lu; Ending Time: %lu; RR: %u\n", COMPLETE.size(), simulation_timer, rraddbgn);	
+	#endif
     fprintf(sim_stats, "Algorithm %s\n", algo.c_str());
     fprintf(sim_stats, "-- average CPU burst time: %.3f ms\n", avgburst);
     fprintf(sim_stats, "-- average wait time: %.3f ms\n", avgwait);
