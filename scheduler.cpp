@@ -40,86 +40,39 @@ bool sortByRemainingBurstTime(Process* a, Process* b) {
 }
 
 //Print Simulation Queue
-void printSimQ(std::deque<Process*> *queue, std::string* outputBuff = NULL) {
-	if(outputBuff == NULL){
-		printf("[Q");
-		if (queue->empty()) {
-			printf(" <empty>]\n");
-			return;
-		}
-		for(unsigned int i = 0; i < queue->size(); ++i) {
-			printf(" %c", (*queue)[i]->getId());
-		}
-		printf("]\n");
-		fflush(stdout);
-	}
-	else{
-		char buff[500];
-		sprintf(buff,"[Q");
-		outputBuff->append(buff);
-		if (queue->empty()) {
-			sprintf(buff, " <empty>]\n");
-			outputBuff->append(buff);
-			return;
-		}
-		for(unsigned int i = 0; i < queue->size(); ++i) {
-			sprintf(buff," %c", (*queue)[i]->getId());
-			outputBuff->append(buff);
-		}
-		sprintf(buff,"]\n");
-		outputBuff->append(buff);
-		
-	}
+void printSimQ(std::deque<Process*> *queue) {
+    printf("[Q");
+    if (queue->empty()) {
+        printf(" <empty>]\n");
+        return;
+    }
+    for(unsigned int i = 0; i < queue->size(); ++i) {
+        printf(" %c", (*queue)[i]->getId());
+    }
+    printf("]\n");
+    fflush(stdout);
 }
 
 //For Preemption printing
-void printPreemptState(std::deque<Process*> *queue,
-		Process* cur, 
-		PrintState pState, 
-		Process* newAdded = NULL, 
-		std::string* outputBuff = NULL) {
-	if (outputBuff == NULL){
-		if (pState == TIMESLICE) {
-			if (queue->empty()) {
-				printf("no preemption because ready queue is empty ");
-			} else {
-				printf("process %c preempted with %dms to go ", cur->getId(), cur->burstTimeLeft());
-			}
-		}
-		if (pState == PREEMPT && newAdded) {
-			printf("Process %c (tau %.0fms) will preempt %c "
-					, newAdded->getId(), newAdded->getTau(), cur->getId());
-		}
-		if (pState == IOPREEMPT && newAdded) {
-			if (cur->getId() == newAdded->getId()) {
-				printf("added to ready queue ");
-			} else {
-				printf("preempting %c ", newAdded->getId());
-			}
-		}
-	}
-	else{
-		char buff[500];
-		if (pState == TIMESLICE) {
-			if (queue->empty()) {
-				sprintf(buff,"no preemption because ready queue is empty ");
-			} else {
-				sprintf(buff,"process %c preempted with %dms to go ", cur->getId(), cur->burstTimeLeft());
-			}
-		}
-		if (pState == PREEMPT && newAdded) {
-			sprintf(buff,"Process %c (tau %.0fms) will preempt %c "
-					, newAdded->getId(), newAdded->getTau(), cur->getId());
-		}
-		if (pState == IOPREEMPT && newAdded) {
-			if (cur->getId() == newAdded->getId()) {
-				sprintf(buff,"added to ready queue ");
-			} else {
-				sprintf(buff,"preempting %c ", newAdded->getId());
-			}
-		}
-		outputBuff->append(buff);
-	}
+void printPreemptState(std::deque<Process*> *queue, Process* cur, PrintState pState, Process* newAdded = NULL) {
+    if (pState == TIMESLICE) {
+        if (queue->empty()) {
+            printf("no preemption because ready queue is empty ");
+        } else {
+            printf("process %c preempted with %dms to go ", cur->getId(), cur->burstTimeLeft());
+        }
+    }
+    if (pState == PREEMPT && newAdded) {
+        printf("Process %c (tau %.0fms) will preempt %c "
+                , newAdded->getId(), newAdded->getTau(), cur->getId());
+    }
+    if (pState == IOPREEMPT && newAdded) {
+        if (cur->getId() == newAdded->getId()) {
+            printf("added to ready queue ");
+        } else {
+            printf("preempting %c ", newAdded->getId());
+        }
+    }
 }
 
 // Printing statements 
@@ -128,215 +81,107 @@ void printProcessState(PrintState p, int time, Process *cur,
         std::deque<Process*> *queue, 
         std::string algoUsed = "", 
         unsigned int tcs = 0, 
-        Process* newAdded = NULL,
-		std::vector<std::string>* outBuff = NULL) {
+        Process* newAdded = NULL) {
 #ifndef PRINTALL
+    // Don't print past 1000ms 
+    // Commented out for testing
     if (time >= 1000 && p != TERMINATED) {
         return;
     }
 #endif
-	if(outBuff == NULL){
-		if ( p == ARRIVE ) {
-			if (0 != cur->getTau()) {
-				printf("time %dms: Process %c (tau %.0fms) arrived; added to ready queue "
-						, time, cur->getId(), cur->getTau());
-			} else {
-				printf("time %dms: Process %c arrived; added to ready queue "
-						, time, cur->getId());
-			}
-		}
-		if (p == START) {
-			if (0 != cur->getTau()) {
-				if(algoUsed == "SRT") {
-					printf("time %dms: Process %c (tau %.0fms) started using the CPU with %dms burst remaining "
-							, time, cur->getId(), cur->getTau(), cur->burstTimeLeft());
-				} else {
-					printf("time %dms: Process %c (tau %.0fms) started using the CPU for %dms burst "
-							, time, cur->getId(), cur->getTau(), cur->burstTimeLeft());
-				}
-			} else {
-				if(algoUsed == "RR") {
-					if (cur->isMidBurst()) {
-						printf("time %dms: Process %c started using the CPU with %dms burst remaining "
-								, time, cur->getId(), cur->burstTimeLeft());
-					} else {
-						printf("time %dms: Process %c started using the CPU for %dms burst "
-								, time, cur->getId(), cur->burstTimeLeft());
-					}
-				} else {
-					printf("time %dms: Process %c started using the CPU for %dms burst "
-							, time, cur->getId(), cur->burstTimeLeft());
-				}
-			}
-		}
-		if (p == COMPLETED) {
-			if (0 != cur->getTau()) {
-				if (cur->getNumBurstsLeft() == 1) {
-					printf("time %dms: Process %c (tau %.0fms) completed a CPU burst; %d burst to go "
-							, time, cur->getId(), cur->getTau(), cur->getNumBurstsLeft());
-				} else {
-					printf("time %dms: Process %c (tau %.0fms) completed a CPU burst; %d bursts to go "
-							, time, cur->getId(), cur->getTau(), cur->getNumBurstsLeft());
-				}
-			} else {
-				if (cur->getNumBurstsLeft() == 1) {
-					printf("time %dms: Process %c completed a CPU burst; %d burst to go "
-							, time, cur->getId(), cur->getNumBurstsLeft());
-				} else {
-					printf("time %dms: Process %c completed a CPU burst; %d bursts to go "
-							, time, cur->getId(), cur->getNumBurstsLeft());
-				}	
-			}
-		}
-		if (p == BLOCK) {
-			printf("time %dms: Process %c switching out of CPU; will block on I/O until time %dms "
-					, time, cur->getId(), time+cur->ioTimeLeft()+(tcs/2));
-		}
-		if (p == IOCOMPLETED) {
-			if (0 != cur->getTau()) {
-				printf("time %dms: Process %c (tau %.0fms) completed I/O; added to ready queue "
-						, time, cur->getId(), cur->getTau());
-			} else {
-				printf("time %dms: Process %c completed I/O; added to ready queue "
-						, time, cur->getId());
-			}
-		}
-		if (p == IOPREEMPT) {
-			if (0 != cur->getTau()) {
-				printf("time %dms: Process %c (tau %.0fms) completed I/O; "
-						, time, cur->getId(), cur->getTau());
-			} else {
-				printf("time %dms: Process %c completed I/O; "
-						, time, cur->getId());
-			}
-			printPreemptState(queue, cur, p, newAdded);
-		}
-		if (p == TAU) {
-			printf("time %dms: Recalculated tau = %.0fms for process %c "
-					, time, cur->getTau(), cur->getId());
-		}
-		if (p == TERMINATED) {
-			printf("time %dms: Process %c terminated ", time, cur->getId());
-		}
-		if (p == TIMESLICE) {
-			printf("time %dms: Time slice expired; ", time);
-			printPreemptState(queue, cur, p, newAdded);
-		}
-		if (p == PREEMPT) {
-			printf("time %dms: ", time);
-			printPreemptState(queue, cur, p, newAdded);
-		}
-		printSimQ(queue);
-		fflush(stdout);
-	}else{
-		char buff[500];
-		std::string output;
-		if ( p == ARRIVE ) {
-			if (0 != cur->getTau()) {
-				sprintf(buff, "time %dms: Process %c (tau %.0fms) arrived; added to ready queue "
-						, time, cur->getId(), cur->getTau());
-			} else {
-				sprintf(buff,"time %dms: Process %c arrived; added to ready queue "
-						, time, cur->getId());
-			}
-			output.append(buff);
-		}
-		if (p == START) {
-			if (0 != cur->getTau()) {
-				if(algoUsed == "SRT") {
-					sprintf(buff,"time %dms: Process %c (tau %.0fms) started using the CPU with %dms burst remaining "
-							, time, cur->getId(), cur->getTau(), cur->burstTimeLeft());
-				} else {
-					sprintf(buff,"time %dms: Process %c (tau %.0fms) started using the CPU for %dms burst "
-							, time, cur->getId(), cur->getTau(), cur->burstTimeLeft());
-				}
-			} else {
-				if(algoUsed == "RR") {
-					if (cur->isMidBurst()) {
-						sprintf(buff,"time %dms: Process %c started using the CPU with %dms burst remaining "
-								, time, cur->getId(), cur->burstTimeLeft());
-					} else {
-						sprintf(buff,"time %dms: Process %c started using the CPU for %dms burst "
-								, time, cur->getId(), cur->burstTimeLeft());
-					}
-				} else {
-					sprintf(buff,"time %dms: Process %c started using the CPU for %dms burst "
-							, time, cur->getId(), cur->burstTimeLeft());
-				}
-			}
-			output.append(buff);
-		}
-		if (p == COMPLETED) {
-			if (0 != cur->getTau()) {
-				if (cur->getNumBurstsLeft() == 1) {
-					sprintf(buff,"time %dms: Process %c (tau %.0fms) completed a CPU burst; %d burst to go "
-							, time, cur->getId(), cur->getTau(), cur->getNumBurstsLeft());
-				} else {
-					sprintf(buff,"time %dms: Process %c (tau %.0fms) completed a CPU burst; %d bursts to go "
-							, time, cur->getId(), cur->getTau(), cur->getNumBurstsLeft());
-				}
-			} else {
-				if (cur->getNumBurstsLeft() == 1) {
-					sprintf(buff,"time %dms: Process %c completed a CPU burst; %d burst to go "
-							, time, cur->getId(), cur->getNumBurstsLeft());
-				} else {
-					sprintf(buff,"time %dms: Process %c completed a CPU burst; %d bursts to go "
-							, time, cur->getId(), cur->getNumBurstsLeft());
-				}	
-			}
-			output.append(buff);
-		}
-		if (p == BLOCK) {
-			sprintf(buff,"time %dms: Process %c switching out of CPU; will block on I/O until time %dms "
-					, time, cur->getId(), time+cur->ioTimeLeft()+(tcs/2));
-			output.append(buff);
-		}
-		if (p == IOCOMPLETED) {
-			if (0 != cur->getTau()) {
-				sprintf(buff,"time %dms: Process %c (tau %.0fms) completed I/O; added to ready queue "
-						, time, cur->getId(), cur->getTau());
-			} else {
-				sprintf(buff,"time %dms: Process %c completed I/O; added to ready queue "
-						, time, cur->getId());
-			}
-			output.append(buff);
-		}
-		if (p == IOPREEMPT) {
-			if (0 != cur->getTau()) {
-				sprintf(buff,"time %dms: Process %c (tau %.0fms) completed I/O; "
-						, time, cur->getId(), cur->getTau());
-			} else {
-				sprintf(buff,"time %dms: Process %c completed I/O; "
-						, time, cur->getId());
-			}
-			output.append(buff);
-			printPreemptState(queue, cur, p, newAdded, &output);
-		}
-		if (p == TAU) {
-			sprintf(buff,"time %dms: Recalculated tau = %.0fms for process %c "
-					, time, cur->getTau(), cur->getId());
-			output.append(buff);
-		}
-		if (p == TERMINATED) {
-			sprintf(buff,"time %dms: Process %c terminated ", time, cur->getId());
-			output.append(buff);
-		}
-		if (p == TIMESLICE) {
-			sprintf(buff,"time %dms: Time slice expired; ", time);
-			output.append(buff);
-			printPreemptState(queue, cur, p, newAdded, &output);
-		}
-		if (p == PREEMPT) {
-			sprintf(buff, "time %dms: ", time);
-			output.append(buff);
-			printPreemptState(queue, cur, p, newAdded, &output);
-		}
-		printSimQ(queue, &output);
-		outBuff->push_back(output);
-	}
+    if ( p == ARRIVE ) {
+        if (0 != cur->getTau()) {
+            printf("time %dms: Process %c (tau %.0fms) arrived; added to ready queue "
+                    , time, cur->getId(), cur->getTau());
+        } else {
+            printf("time %dms: Process %c arrived; added to ready queue "
+                    , time, cur->getId());
+        }
+    }
+    if (p == START) {
+        if (0 != cur->getTau()) {
+            if(algoUsed == "SRT") {
+                printf("time %dms: Process %c (tau %.0fms) started using the CPU with %dms burst remaining "
+                        , time, cur->getId(), cur->getTau(), cur->burstTimeLeft());
+            } else {
+                printf("time %dms: Process %c (tau %.0fms) started using the CPU for %dms burst "
+                        , time, cur->getId(), cur->getTau(), cur->burstTimeLeft());
+            }
+        } else {
+            if(algoUsed == "RR") {
+                if (cur->isMidBurst()) {
+                    printf("time %dms: Process %c started using the CPU with %dms burst remaining "
+                            , time, cur->getId(), cur->burstTimeLeft());
+                } else {
+                    printf("time %dms: Process %c started using the CPU for %dms burst "
+                            , time, cur->getId(), cur->burstTimeLeft());
+                }
+            } else {
+                printf("time %dms: Process %c started using the CPU for %dms burst "
+                        , time, cur->getId(), cur->burstTimeLeft());
+            }
+        }
+    }
+    if (p == COMPLETED) {
+        if (0 != cur->getTau()) {
+            if (cur->getNumBurstsLeft() == 1) {
+                printf("time %dms: Process %c (tau %.0fms) completed a CPU burst; %d burst to go "
+                        , time, cur->getId(), cur->getTau(), cur->getNumBurstsLeft());
+            } else {
+                printf("time %dms: Process %c (tau %.0fms) completed a CPU burst; %d bursts to go "
+                        , time, cur->getId(), cur->getTau(), cur->getNumBurstsLeft());
+            }
+        } else {
+            if (cur->getNumBurstsLeft() == 1) {
+                printf("time %dms: Process %c completed a CPU burst; %d burst to go "
+                        , time, cur->getId(), cur->getNumBurstsLeft());
+            } else {
+                printf("time %dms: Process %c completed a CPU burst; %d bursts to go "
+                        , time, cur->getId(), cur->getNumBurstsLeft());
+            }	
+        }
+    }
+    if (p == BLOCK) {
+        printf("time %dms: Process %c switching out of CPU; will block on I/O until time %dms "
+                , time, cur->getId(), time+cur->ioTimeLeft()+(tcs/2));
+    }
+    if (p == IOCOMPLETED) {
+        if (0 != cur->getTau()) {
+            printf("time %dms: Process %c (tau %.0fms) completed I/O; added to ready queue "
+                    , time, cur->getId(), cur->getTau());
+        } else {
+            printf("time %dms: Process %c completed I/O; added to ready queue "
+                    , time, cur->getId());
+        }
+    }
+    if (p == IOPREEMPT) {
+        if (0 != cur->getTau()) {
+            printf("time %dms: Process %c (tau %.0fms) completed I/O; "
+                    , time, cur->getId(), cur->getTau());
+        } else {
+            printf("time %dms: Process %c completed I/O; "
+                    , time, cur->getId());
+        }
+        printPreemptState(queue, cur, p, newAdded);
+    }
+    if (p == TAU) {
+        printf("time %dms: Recalculated tau = %.0fms for process %c "
+                , time, cur->getTau(), cur->getId());
+    }
+    if (p == TERMINATED) {
+        printf("time %dms: Process %c terminated ", time, cur->getId());
+    }
+    if (p == TIMESLICE) {
+        printf("time %dms: Time slice expired; ", time);
+        printPreemptState(queue, cur, p, newAdded);
+    }
+    if (p == PREEMPT) {
+        printf("time %dms: ", time);
+        printPreemptState(queue, cur, p, newAdded);
+    }
+    printSimQ(queue);
+    fflush(stdout);
 }
-
-
 
 
 
@@ -374,7 +219,6 @@ Scheduler::Scheduler(std::vector<Process*> *processList,
     , rraddbgn(rr)
     , useTau(false)
       , pState()
-	  , printBuffer()
 
 {
     for (const auto& p: *processList) {
@@ -456,7 +300,7 @@ bool Scheduler::contextSwitchTime(bool swtIN) {
                 // PRINT HERE: time 4556ms: Process B (tau 121ms) completed I/O; added to ready queue [Q B]
 
                 if (isPreemptive && RUNNING && !READY.empty()) {
-                    if (useTau && READY.front()->getTau() < RUNNING->tauEffective()) {
+                    if (useTau && io == READY.front() && READY.front()->getTau() < RUNNING->tauEffective()) {
                         // print 'will preempt' here, need to call switchIN again after
 
                         if (swtIN) {
@@ -472,6 +316,9 @@ bool Scheduler::contextSwitchTime(bool swtIN) {
                 if (io->doIO(1)) {
                     if (i == tcs/2 && swtIN) {
                         // don't print, need to print after next process is switched in
+                        // need to add process that was preempted in here?
+                        READY.push_back(RUNNING);
+                        std::sort(READY.begin(), READY.end(), sortByTau);
                         break;
                     }
                     // return to READY
@@ -491,7 +338,7 @@ bool Scheduler::contextSwitchTime(bool swtIN) {
 
 
                     if (isPreemptive && RUNNING && !READY.empty()) {
-                        if (useTau && READY.front()->getTau() < RUNNING->tauEffective()) {
+                        if (useTau && io == READY.front() && READY.front()->getTau() < RUNNING->tauEffective()) {
                             // print 'will preempt' here, need to call switchIN again after
 
                             if (swtIN) {
@@ -531,7 +378,7 @@ bool Scheduler::contextSwitchTime(bool swtIN) {
 
 
                 if (isPreemptive && RUNNING && !READY.empty()) {
-                    if (useTau && READY.front()->getTau() < RUNNING->tauEffective()) {
+                    if (useTau && arr == READY.front() && READY.front()->getTau() < RUNNING->tauEffective()) {
                         // print 'will preempt' here, need to call switchIN again after
 
                         if (swtIN) {
@@ -563,7 +410,7 @@ bool Scheduler::contextSwitchTime(bool swtIN) {
                     // PRINT HERE: time 18ms: Process B (tau 100ms) arrived; added to ready queue [Q B]
 
                     if (isPreemptive && RUNNING && !READY.empty()) {
-                        if (useTau && READY.front()->getTau() < RUNNING->tauEffective()) {
+                        if (useTau && arr == READY.front() && READY.front()->getTau() < RUNNING->tauEffective()) {
                             // print 'will preempt' here, need to call switchIN again after
 
                             if (swtIN) {
@@ -616,11 +463,7 @@ bool Scheduler::switchOUT(bool forcePrint) {
 
                 contextSwitchTime(false);
 
-                if (rraddbgn) {
-                    READY.push_front(RUNNING);
-                } else {
-                    READY.push_back(RUNNING);
-                }
+                READY.push_back(RUNNING);
             }
         } else if (isPreemptive && useTau) {
             if (forcePrint) {
@@ -628,10 +471,12 @@ bool Scheduler::switchOUT(bool forcePrint) {
                 printProcessState(pState, simulation_timer, RUNNING, &READY, algoUsed, 0, READY.front());
             }
 
-            contextSwitchTime(false);
+            contextSwitchTime(true);
 
+            /*
             READY.push_back(RUNNING);
             std::sort(READY.begin(), READY.end(), sortByTau);
+            */
         }
     } else {
         // finished burst
@@ -662,9 +507,9 @@ bool Scheduler::switchOUT(bool forcePrint) {
             pState = TERMINATED;
             printProcessState(pState, simulation_timer, RUNNING, &READY, algoUsed);
 
-            contextSwitchTime(false);
-
             COMPLETE.push_back(RUNNING);
+
+            contextSwitchTime(false);
         }
         // handle turnaround after tcs out
     }
@@ -820,6 +665,7 @@ void Scheduler::updateTimers(unsigned int deltaT) {
     for (Process* p: ARRIVAL) {
         p->advanceArrival(deltaT);
     }
+
 }
 
 void Scheduler::fastForward(std::vector<Event> & nxtEvnts) {
@@ -827,6 +673,7 @@ void Scheduler::fastForward(std::vector<Event> & nxtEvnts) {
     updateTimers(nxtEvnts[0].timeToEvent);
 
     Process * runstart = RUNNING;
+
     bool sout = false;
     bool sin = false;
     bool gotTSlice = false;
@@ -838,10 +685,14 @@ void Scheduler::fastForward(std::vector<Event> & nxtEvnts) {
 
             case burstDone:
                 // CPU burst finished, switch OUT
+				switchOUT();
                 sout = true;
                 break;
 
             case ioDone:
+				if (BLOCKED.front()->ioTimeLeft())
+					break;
+
                 // add to READY
                 BLOCKED.front()->finishedIOBlock();
                 READY.push_back(BLOCKED.front());
@@ -863,43 +714,37 @@ void Scheduler::fastForward(std::vector<Event> & nxtEvnts) {
                 }
                 if(sout && sin){
                     pState = IOPREEMPT;
-                    printProcessState(pState, simulation_timer, BLOCKED.front(), &READY, algoUsed, 0, RUNNING, &printBuffer);
+                    printProcessState(pState, simulation_timer, BLOCKED.front(), &READY, algoUsed, 0, RUNNING);
 
-                }
-                else{
+                } else{
                     // print i/o complete
                     pState = IOCOMPLETED;
-                    printProcessState(pState, simulation_timer, BLOCKED.front(), &READY, algoUsed, 0, NULL, &printBuffer);
+                    printProcessState(pState, simulation_timer, BLOCKED.front(), &READY);
                 }
+
 
                 // remove element from BLOCKED
                 BLOCKED.pop_front();
                 break;
 
             case arrival:
+				if (ARRIVAL.front()->getArrival())
+					break;
+
                 // add to READY
                 if (rraddbgn) {
-					#ifdef DEBUG_MODE
-						printf("pushed front");
-					#endif
                     READY.push_front(ARRIVAL.front());
                 } else {
-					#ifdef DEBUG_MODE
-						printf("pushed back");
-					#endif
                     READY.push_back(ARRIVAL.front());
                 }
 
                 // sort if needed
                 if (useTau) {
-					#ifdef DEBUG_MODE
-						printf("sorted");
-					#endif
                     std::sort(READY.begin(), READY.end(), sortByTau);
                 }
 
                 pState = ARRIVE;
-                printProcessState(pState, simulation_timer, ARRIVAL.front(), &READY, algoUsed, 0, NULL, &printBuffer);
+                printProcessState(pState, simulation_timer, ARRIVAL.front(), &READY, algoUsed);
 
                 // would it preempt?
                 if (isPreemptive && RUNNING
@@ -938,7 +783,7 @@ void Scheduler::fastForward(std::vector<Event> & nxtEvnts) {
                         // print here?
 
                         pState = TIMESLICE;
-                        printProcessState(pState, simulation_timer, RUNNING, &READY, algoUsed, 0, NULL, &printBuffer);
+                        printProcessState(pState, simulation_timer, RUNNING, &READY, algoUsed);
                     }
                 }
 
@@ -951,13 +796,7 @@ void Scheduler::fastForward(std::vector<Event> & nxtEvnts) {
     if (sout) {
         switchOUT();
     }
-	if(!printBuffer.empty()){
-		for(std::string buff : printBuffer){
-			printf("%s", buff.c_str());			
-		}
-		printBuffer.clear();
-	}
-	
+
     if (!RUNNING) {
         sin = true;
     } else if (isPreemptive && !READY.empty()) {

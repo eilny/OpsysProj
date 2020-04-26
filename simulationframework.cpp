@@ -96,7 +96,7 @@ int main( int argc, char ** argv) {
     }
 
     // Submitty:
-    setvbuf( stdout, NULL, _IONBF, 0 );
+    //setvbuf( stdout, NULL, _IONBF, 0 );
 
     // argv[1] - seed
     int seed = atoi(argv[1]);
@@ -184,7 +184,6 @@ int main( int argc, char ** argv) {
 	//RR
 	Scheduler *RR = new Scheduler(baseProcesses, tcs, timeslice, rraddbgn);
 	RR->runSimulation("RR");
-	printf("\n");
 
 	// Stat Stuff
 	FCFS->printStats("FCFS");
