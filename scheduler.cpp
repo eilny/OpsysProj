@@ -266,6 +266,9 @@ bool Scheduler::contextSwitchTime(bool swtIN) {
     //      with higher priority
     bool preemptAfter = false;
 
+    for (unsigned int i = 0; i < tcs/2; ++i) {
+    }
+
     if (RUNNING) {
         RUNNING->turnA(tcs/2);
     }
@@ -317,8 +320,10 @@ bool Scheduler::contextSwitchTime(bool swtIN) {
                     if (i == tcs/2 && swtIN) {
                         // don't print, need to print after next process is switched in
                         // need to add process that was preempted in here?
+                        /*
                         READY.push_back(RUNNING);
                         std::sort(READY.begin(), READY.end(), sortByTau);
+                        */
                         break;
                     }
                     // return to READY
@@ -471,12 +476,10 @@ bool Scheduler::switchOUT(bool forcePrint) {
                 printProcessState(pState, simulation_timer, RUNNING, &READY, algoUsed, 0, READY.front());
             }
 
-            contextSwitchTime(true);
+            contextSwitchTime(false);
 
-            /*
             READY.push_back(RUNNING);
             std::sort(READY.begin(), READY.end(), sortByTau);
-            */
         }
     } else {
         // finished burst
