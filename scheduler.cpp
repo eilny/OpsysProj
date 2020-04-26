@@ -82,13 +82,11 @@ void printProcessState(PrintState p, int time, Process *cur,
         std::string algoUsed = "", 
         unsigned int tcs = 0, 
         Process* newAdded = NULL) {
-#ifdef P1000
     // Don't print past 1000ms 
     // Commented out for testing
     if (time >= 1000 && p != TERMINATED) {
         return;
     }
-#endif
     if ( p == ARRIVE ) {
         if (0 != cur->getTau()) {
             printf("time %dms: Process %c (tau %.0fms) arrived; added to ready queue "
@@ -667,7 +665,6 @@ void Scheduler::fastForward(std::vector<Event> & nxtEvnts) {
     updateTimers(nxtEvnts[0].timeToEvent);
 
     Process * runstart = RUNNING;
-
     bool sout = false;
     bool sin = false;
     bool gotTSlice = false;
@@ -712,7 +709,6 @@ void Scheduler::fastForward(std::vector<Event> & nxtEvnts) {
                     pState = IOCOMPLETED;
                     printProcessState(pState, simulation_timer, BLOCKED.front(), &READY);
                 }
-
 
                 // remove element from BLOCKED
                 BLOCKED.pop_front();
