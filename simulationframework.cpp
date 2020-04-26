@@ -113,7 +113,7 @@ int main( int argc, char ** argv) {
     // argv[7] - RR timeslice
     unsigned int timeslice = atoi(argv[7]);
     // argv[8] - rradd: place processes at beginning or end of queue
-	bool rraddbgn;
+	bool rraddbgn = false;
 	if (argc == 9){
 		if (0 == strcmp("BEGINNING", argv[8])) {
 			rraddbgn = true;
@@ -167,7 +167,7 @@ int main( int argc, char ** argv) {
 	printf("\n");
 	
 	
-	delete baseProcesses;
+	// delete baseProcesses;
 	baseProcesses = new std::vector<Process*>();
 	getProcessList(seed, lambda, upperbound, baseProcesses, nproc, alpha);
 	printArrivalList(*baseProcesses, nproc, 1/lambda);
@@ -184,6 +184,8 @@ int main( int argc, char ** argv) {
 	//RR
 	Scheduler *RR = new Scheduler(baseProcesses, tcs, timeslice, rraddbgn);
 	RR->runSimulation("RR");
+	printf("\n");
+
 	// Stat Stuff
 	FCFS->printStats("FCFS");
 	SJF->printStats("SJF");

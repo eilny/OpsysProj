@@ -60,6 +60,7 @@ class Scheduler {
 		
 		PrintState pState;
 		std::string algoUsed; 
+		std::vector<std::string> printBuffer;
 
     public:
 		//Constructor
