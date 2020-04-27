@@ -36,6 +36,7 @@ class Scheduler {
         // for stat tracking of avg burst duration
         std::vector<unsigned int> BURSTS;
         std::vector<unsigned int> TURNAROUND;
+        std::vector<unsigned int> WAIT;
         unsigned long burstTimeStart;
 
         // simulation timer

@@ -84,7 +84,7 @@ void printProcessState(PrintState p, int time, Process *cur,
 		Process* newAdded = NULL) {
 #ifndef PRINTALL
 	// Don't print past 1000ms 
-	// Commented out for testing
+  // Commented out for testing
 	if (time >= 1000 && p != TERMINATED) {
 		return;
 	}
@@ -218,7 +218,7 @@ Scheduler::Scheduler(std::vector<Process*> *processList,
 	, remainingtimeslice(tmslice)
 	, rraddbgn(rr)
 	, useTau(false)
-	  , pState()
+	, pState()
 
 {
 	for (const auto& p: *processList) {
@@ -262,8 +262,8 @@ void Scheduler::setAlgorithm(std::string algo) {
 
 bool Scheduler::contextSwitchTime(bool swtIN, bool moveToRdy) {
 	// returns a bool - whether another switchIN/contextSwitch needs to be called
-	//      again after completion of this one due to process finishing i/o or arriving
-	//      with higher priority
+  //      again after completion of this one due to process finishing i/o or arriving
+  //      with higher priority
 	bool preemptAfter = false;
 
 	if (RUNNING) {
@@ -297,11 +297,11 @@ bool Scheduler::contextSwitchTime(bool swtIN, bool moveToRdy) {
 				// catch unhandled io
 
 				io->finishedIOBlock();
-                if (algoUsed == "RR" && rraddbgn) {
-                    READY.push_front(io);
-                } else {
-                    READY.push_back(io);
-                }
+				if (algoUsed == "RR" && rraddbgn) {
+					READY.push_front(io);
+				} else {
+					READY.push_back(io);
+				}
 				BLOCKED.pop_front();
 				// added to READY, increase wait time appropriately (i.e. remainder of tcs/2)
 				io->waitTime(tcs/2 - i);
@@ -312,7 +312,7 @@ bool Scheduler::contextSwitchTime(bool swtIN, bool moveToRdy) {
 				pState = IOCOMPLETED;
 				printProcessState(pState, simulation_timer, io, &READY, algoUsed);
 				// PRINT HERE: time 92ms: Process A (tau 78ms) completed I/O; preempting B [Q A]
-				// PRINT HERE: time 4556ms: Process B (tau 121ms) completed I/O; added to ready queue [Q B]
+		// PRINT HERE: time 4556ms: Process B (tau 121ms) completed I/O; added to ready queue [Q B]
 
 				if (isPreemptive && RUNNING && !READY.empty()) {
 					if (useTau && io == READY.front() && READY.front()->getTau() < RUNNING->tauEffective()) {
@@ -334,12 +334,12 @@ bool Scheduler::contextSwitchTime(bool swtIN, bool moveToRdy) {
 						break;
 					}
 					// return to READY
-                    io->finishedIOBlock();
-                    if (algoUsed == "RR" && rraddbgn) {
-                        READY.push_front(io);
-                    } else {
-                        READY.push_back(io);
-                    }
+					io->finishedIOBlock();
+					if (algoUsed == "RR" && rraddbgn) {
+						READY.push_front(io);
+					} else {
+						READY.push_back(io);
+					}
 					BLOCKED.pop_front();
 					// added to READY, increase wait time appropriately (i.e. remainder of tcs/2)
 					io->waitTime(tcs/2 - i);
@@ -350,7 +350,7 @@ bool Scheduler::contextSwitchTime(bool swtIN, bool moveToRdy) {
 					pState = IOCOMPLETED;
 					printProcessState(pState, simulation_timer+i, io, &READY);
 					// PRINT HERE: time 92ms: Process A (tau 78ms) completed I/O; preempting B [Q A]
-					// PRINT HERE: time 4556ms: Process B (tau 121ms) completed I/O; added to ready queue [Q B]
+		  // PRINT HERE: time 4556ms: Process B (tau 121ms) completed I/O; added to ready queue [Q B]
 
 
 					if (isPreemptive && RUNNING && !READY.empty()) {
@@ -379,11 +379,11 @@ bool Scheduler::contextSwitchTime(bool swtIN, bool moveToRdy) {
 			if (arr->getArrival() == 0) {
 				// catch unhandled arr
 
-                if (algoUsed == "RR" && rraddbgn) {
-                    READY.push_front(arr);
-                } else {
-                    READY.push_back(arr);
-                }
+				if (algoUsed == "RR" && rraddbgn) {
+					READY.push_front(arr);
+				} else {
+					READY.push_back(arr);
+				}
 				ARRIVAL.pop_front();
 				// added to READY, increase wait time appropriately (i.e. remainder of tcs/2)
 				arr->waitTime(tcs/2 - i);
@@ -394,7 +394,7 @@ bool Scheduler::contextSwitchTime(bool swtIN, bool moveToRdy) {
 				pState = ARRIVE;
 				printProcessState(pState, simulation_timer, arr, &READY);
 				// PRINT HERE: time 92ms: Process A (tau 78ms) completed I/O; preempting B [Q A]
-				// PRINT HERE: time 4556ms: Process B (tau 121ms) completed I/O; added to ready queue [Q B]
+		// PRINT HERE: time 4556ms: Process B (tau 121ms) completed I/O; added to ready queue [Q B]
 
 
 				if (isPreemptive && RUNNING && !READY.empty()) {
@@ -418,11 +418,11 @@ bool Scheduler::contextSwitchTime(bool swtIN, bool moveToRdy) {
 					}
 					// process arrives, add to READY
 
-                    if (algoUsed == "RR" && rraddbgn) {
-                        READY.push_front(arr);
-                    } else {
-                        READY.push_back(arr);
-                    }
+					if (algoUsed == "RR" && rraddbgn) {
+						READY.push_front(arr);
+					} else {
+						READY.push_back(arr);
+					}
 					ARRIVAL.pop_front();
 					arr->waitTime(tcs/2 - i);
 					if (useTau) {
@@ -466,13 +466,13 @@ bool Scheduler::switchOUT(bool forcePrint) {
 	}
 
 	// if we are switching something out, save the burst time
-	// --> is it still burst time if preempted? stats question...
-	// this allows for burst duration of 0 if back to back preemptions - is that ok?
+  // --> is it still burst time if preempted? stats question...
+  // this allows for burst duration of 0 if back to back preemptions - is that ok?
 	BURSTS.push_back(simulation_timer - burstTimeStart);
 
 	if (RUNNING->burstTimeLeft()) {
 		// preemption, not done
-		// move to READY
+	// move to READY
 		++preemptions;
 
 		// tslice or preempted
@@ -494,9 +494,10 @@ bool Scheduler::switchOUT(bool forcePrint) {
 					}
 					TURNAROUND.push_back(RUNNING->getTurnaround());
 					RUNNING->turnAReset();
+					WAIT.push_back(RUNNING->getWaitTime());
+					RUNNING->resetWait();
 					RUNNING = NULL;
 				}
-				// READY.push_back(RUNNING);
 			}
 		} else if (isPreemptive && useTau) {
 			if (forcePrint) {
@@ -513,10 +514,10 @@ bool Scheduler::switchOUT(bool forcePrint) {
 				}
 				TURNAROUND.push_back(RUNNING->getTurnaround());
 				RUNNING->turnAReset();
+				WAIT.push_back(RUNNING->getWaitTime());
+				RUNNING->resetWait();
 				RUNNING = NULL;
 			}
-			// READY.push_back(RUNNING);
-			// std::sort(READY.begin(), READY.end(), sortByTau);
 		}
 	} else {
 		// finished burst
@@ -556,6 +557,8 @@ bool Scheduler::switchOUT(bool forcePrint) {
 	if (RUNNING) {
 		TURNAROUND.push_back(RUNNING->getTurnaround());
 		RUNNING->turnAReset();
+		WAIT.push_back(RUNNING->getWaitTime());
+		RUNNING->resetWait();
 		RUNNING = NULL;
 	}
 	return true;
@@ -606,7 +609,7 @@ void Scheduler::contextSwitch(bool swo, bool swi, bool forcePrint) {
 	if (swi) {
 		if (switchIN()) {
 			// calls contextSwitchTime inside to print 'started using CPU' after C/S in
-			// need to process if something was supposed to preempt but could not because switch IN began
+	  // need to process if something was supposed to preempt but could not because switch IN began
 			contextSwitch(true, true, true);
 			return;
 		}
@@ -664,7 +667,7 @@ std::vector<Event> Scheduler::nextEvents() {
 	type = arrival;
 	for (Process* p : ARRIVAL) {
 		// TODO: quit after arrival is no longer the same value?
-		// that's mostly for efficiency, who cares atm
+	// that's mostly for efficiency, who cares atm
 		storeEventIfSooner(nxtEvnts, p->getArrival(), type);
 	}
 
@@ -738,11 +741,11 @@ void Scheduler::fastForward(std::vector<Event> & nxtEvnts) {
 
 				// add to READY
 				BLOCKED.front()->finishedIOBlock();
-                if (algoUsed == "RR" && rraddbgn) {
-                    READY.push_front(BLOCKED.front());
-                } else {
-                    READY.push_back(BLOCKED.front());
-                }
+				if (algoUsed == "RR" && rraddbgn) {
+					READY.push_front(BLOCKED.front());
+				} else {
+					READY.push_back(BLOCKED.front());
+				}
 
 				// sort if needed
 				if (useTau) {
@@ -814,10 +817,10 @@ void Scheduler::fastForward(std::vector<Event> & nxtEvnts) {
 				// preemptive by nature
 				if (!RUNNING) {
 					// nothing RUNNING, swap in?
-					//                    if (!READY.empty()) {
-					// no preemption
-					//                   } else {
-					// preempt
+		  //                    if (!READY.empty()) {
+	  // no preemption
+	//                   } else {
+  // preempt
 					sin = true;
 					gotTSlice = true;
 					//                  }
@@ -830,7 +833,7 @@ void Scheduler::fastForward(std::vector<Event> & nxtEvnts) {
 						gotTSlice = true;
 					} else {
 						// nothing on READY, don't preempt
-						// print here?
+			// print here?
 
 						pState = TIMESLICE;
 						printProcessState(pState, simulation_timer, RUNNING, &READY, algoUsed);
@@ -884,13 +887,13 @@ bool Scheduler::simDone() {
 void Scheduler::statCollection() {
 	// preemptions and numCS should already be handled
 
-	// calculate avg wait
-	if (COMPLETE.size()) {
-		unsigned int nproc = COMPLETE.size();
-		for (Process * cmp : COMPLETE) {
-			avgwait += (float)cmp->getWaitTime();
+  // calculate avg wait
+	if (WAIT.size()) {
+		// unsigned int nproc = COMPLETE.size();
+		for (unsigned int wTime: WAIT) {
+			avgwait += wTime;
 		}
-		avgwait /= nproc;
+		avgwait /= WAIT.size();
 	}
 
 	if (BURSTS.size()) { // not super necessary, but just for safety
@@ -911,11 +914,11 @@ void Scheduler::statCollection() {
 
 bool Scheduler::advance() {
 	// return true if advanced onwards
-	// return false if finished
-	// first check if we're finished with the simulation
+  // return false if finished
+  // first check if we're finished with the simulation
 	if (simDone()) {
 		// everything empty, we're done here, simulation is over
-		// call stat checking functions? -> calculate avg wait, avg burst, avg turnaround, #preemptions, #cs?
+	// call stat checking functions? -> calculate avg wait, avg burst, avg turnaround, #preemptions, #cs?
 		statCollection();
 		return false;
 	}
@@ -927,7 +930,7 @@ bool Scheduler::advance() {
 		return false;
 	} else { // things are happening, so go do them
 		//Printing statement 
-		//fastForward(thingsHappening[0].timeToEvent);
+	//fastForward(thingsHappening[0].timeToEvent);
 		fastForward(thingsHappening);
 		return true;
 	}
@@ -941,8 +944,8 @@ void Scheduler::runSimulation(std::string algo) {
 	this->setAlgorithm(algo);
 	while(advance()) {
 		// #ifdef DEBUG_MODE
-		// printf("Advancing simulation in loop!\n");
-		// #endif
+	// printf("Advancing simulation in loop!\n");
+  // #endif
 	}
 	printf("time %ldms: Simulator ended for %s ", this->simulation_timer, algo.c_str());
 	printSimQ(&READY);

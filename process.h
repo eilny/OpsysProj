@@ -74,6 +74,7 @@ class Process {
         float tauEffective();
 
         void waitTime(unsigned int deltaT);
+		void resetWait();
 
         void finishedCPUBurst();
         void finishedIOBlock();

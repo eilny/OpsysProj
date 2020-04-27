@@ -181,6 +181,10 @@ float Process::tauEffective() {
 void Process::waitTime(unsigned int deltaT) {
     wait_time += deltaT;
 }
+void Process::resetWait(){
+	wait_time = 0;
+	
+}
 
 void Process::turnA(unsigned int deltaT) {
     turnaround_time += deltaT;

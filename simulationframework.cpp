@@ -87,6 +87,12 @@ void printArrivalList(std::vector<Process*> processes, int numProcess, float tau
 	fflush(stdout);
 }
 
+void clearProcesses(std::vector<Process *> * procs)
+{
+	for (Process * p: *procs) {
+		delete p;
+	}
+}
 
 int main( int argc, char ** argv) {
 
@@ -96,7 +102,9 @@ int main( int argc, char ** argv) {
     }
 
     // Submitty:
-    //setvbuf( stdout, NULL, _IONBF, 0 );
+#ifndef DEBUG_MODE
+    setvbuf( stdout, NULL, _IONBF, 0 );
+#endif
 
     // argv[1] - seed
     int seed = atoi(argv[1]);
@@ -157,6 +165,7 @@ int main( int argc, char ** argv) {
 	printf("\n");
 	
 
+	clearProcesses(baseProcesses);
 	delete baseProcesses;
 	baseProcesses = new std::vector<Process*>();
 	getProcessList(seed, lambda, upperbound, baseProcesses, nproc, alpha);
@@ -167,7 +176,8 @@ int main( int argc, char ** argv) {
 	printf("\n");
 	
 	
-	// delete baseProcesses;
+	clearProcesses(baseProcesses);
+	delete baseProcesses;
 	baseProcesses = new std::vector<Process*>();
 	getProcessList(seed, lambda, upperbound, baseProcesses, nproc, alpha);
 	printArrivalList(*baseProcesses, nproc, 1/lambda);
@@ -177,6 +187,7 @@ int main( int argc, char ** argv) {
 	printf("\n");
 	
 	
+	clearProcesses(baseProcesses);
 	delete baseProcesses;
 	baseProcesses = new std::vector<Process*>();
 	getProcessList(seed, lambda, upperbound, baseProcesses, nproc, alpha);
@@ -185,6 +196,8 @@ int main( int argc, char ** argv) {
 	Scheduler *RR = new Scheduler(baseProcesses, tcs, timeslice, rraddbgn);
 	RR->runSimulation("RR");
 
+	clearProcesses(baseProcesses);
+	delete baseProcesses;
 	// Stat Stuff
 	FCFS->printStats("FCFS");
 	SJF->printStats("SJF");
@@ -199,6 +212,5 @@ int main( int argc, char ** argv) {
 	delete RR;
 
 	
-	delete baseProcesses;
 }
 
