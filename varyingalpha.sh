@@ -21,7 +21,7 @@ mv simout.txt results/simout05_a03.txt
 echo "test 5 - alpha .4\n"
 ./a.out 64 0.001 4096 8 4 0.4 2048 > results/output_5_a04.txt
 touch simout.txt
-mv simout.txt results/simout05_a01.txt
+mv simout.txt results/simout05_a04.txt
 
 echo "test 5 - alpha .5\n"
 ./a.out 64 0.001 4096 8 4 0.5 2048 > results/output_5_a05.txt
