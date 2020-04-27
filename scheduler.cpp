@@ -4,6 +4,7 @@
 #include <deque>
 #include <algorithm>
 #include <string>
+#include <numeric>
 
 #include "scheduler.h"
 
@@ -897,11 +898,21 @@ void Scheduler::statCollection() {
 		avgwait /= WAIT.size();
 	}
 
-	if (BURSTS.size()) { // not super necessary, but just for safety
-		for (unsigned int btime : BURSTS) {
-			avgburst += btime;
+	// if (BURSTS.size()) { // not super necessary, but just for safety
+		// for (unsigned int btime : BURSTS) {
+			// avgburst += btime;
+		// }
+		// avgburst /= BURSTS.size();
+	// }
+	
+	if (COMPLETE.size()) { // not super necessary, but just for safety
+		int totalBursts = 0;
+		for (Process* btime : COMPLETE) {
+			avgburst += accumulate(btime->getPristineBurst()->begin(), btime->getPristineBurst()->end(), 0);
+			totalBursts += btime->getPristineBurst()->size();
+			
 		}
-		avgburst /= BURSTS.size();
+		avgburst /= totalBursts;
 	}
 
 	if (TURNAROUND.size()) { // not super necessary, but just for safety
